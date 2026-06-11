@@ -2,11 +2,11 @@
 
 ## Milestones
 
-- [ ] **1. GitHub Action** — auto-render on push of any `.xvml` file → commit HTML to `/docs`
-  - [ ] Trigger on `**.xvml` push
-  - [ ] Run `xvml build` via the published CLI
-  - [ ] Commit rendered HTML back to `/docs` (sha256-gated to avoid empty commits)
-  - [ ] Add to `.github/workflows/xvml-render.yml`
+- [x] **1. GitHub Action** — auto-render on push of any `.xvml` file → commit HTML to `/docs`
+  - [x] Trigger on `**.xvml` push
+  - [x] Run `xvml build` via the published CLI
+  - [x] Commit rendered HTML back to `/docs` (sha256-gated to avoid empty commits)
+  - [x] Add to `.github/workflows/xvml-render.yml`
 
 - [ ] **2. `xvml check`** — spec compliance command that verifies files against XVML spec constraints
   - [ ] Exit code 1 on any parse or spec error
