@@ -1,5 +1,5 @@
 @page dashboard
-@nav Home | Projects | Settings
+@nav Home=readme.html | Projects=noc-dashboard.html | Settings=settings.html
 @stats
   @stat "1,240" "Total users"
   @stat "98%" "Uptime"

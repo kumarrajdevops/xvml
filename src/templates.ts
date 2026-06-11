@@ -165,12 +165,17 @@ function renderStats(node: XvmlNode, state: RenderState): string {
 // ── Navigation / Presentation ─────────────────────────────────────────────────
 
 function renderNav(node: XvmlNode): string {
-  // Args: keyword items separated by "|" keyword, e.g. Home | Projects | Settings
-  const items = node.args
-    .filter((a): a is Extract<Arg, { type: 'keyword' }> => a.type === 'keyword' && a.value !== '|')
-    .map(a => a.value);
-  const links = items
-    .map(item => `<li><a class="xvml-nav__link" href="#">${esc(item)}</a></li>`)
+  // Args: keyword items separated by "|", with optional key=value for URLs
+  // e.g. @nav Home=readme.html | Projects | Settings=settings.html
+  const links = node.args
+    .filter(a => a.value !== '|')
+    .map(a => {
+      if (a.type === 'keyvalue') {
+        return `<li><a class="xvml-nav__link" href="${esc(a.value)}">${esc(a.key)}</a></li>`;
+      }
+      const label = String(a.value);
+      return `<li><a class="xvml-nav__link" href="#">${esc(label)}</a></li>`;
+    })
     .join('');
   return `<nav class="xvml-nav"><ul class="xvml-nav__links">${links}</ul></nav>`;
 }
