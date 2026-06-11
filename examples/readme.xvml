@@ -217,6 +217,24 @@ xvml ask "dashboard" --model claude-opus-4-8
   @constraint "api-key" "ANTHROPIC_API_KEY must be set in environment for xvml ask" must
 @end
 
+@card "Examples"
+  @subtitle "Rendered HTML pages — click to open"
+  @table striped
+    @row "Page" "Source" "Description"
+    @row "login.html" "login.xvml" "Sign-in form with fields, checkbox, OAuth button"
+    @row "dashboard.html" "dashboard.xvml" "Stats, alerts, and data table"
+    @row "profile.html" "profile.xvml" "User profile card with avatar and stats"
+    @row "settings.html" "settings.xvml" "Settings form with sections and toggles"
+    @row "noc-dashboard.html" "noc-dashboard.xvml" "Network operations center with service health"
+  @end
+  @layout inline
+  @link "login.html" "login.html" blank
+  @link "dashboard.html" "dashboard.html" blank
+  @link "profile.html" "profile.html" blank
+  @link "settings.html" "settings.html" blank
+  @link "noc-dashboard.html" "noc-dashboard.html" blank
+@end
+
 @card "Links"
   @layout inline
   @link "XVML_SPEC.md — full language reference" "XVML_SPEC.md"

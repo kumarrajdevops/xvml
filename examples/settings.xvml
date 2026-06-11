@@ -81,3 +81,7 @@
     @button "Delete my account" danger
   @end
 @end
+
+@card
+  @link "← Back to docs" "readme.html"
+@end

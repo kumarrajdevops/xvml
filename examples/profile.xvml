@@ -8,3 +8,7 @@
   @select "Team" "Incident | Platform | Cloud"
   @button "Save changes" primary
 @end
+
+@card
+  @link "← Back to docs" "readme.html"
+@end

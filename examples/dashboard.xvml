@@ -10,3 +10,7 @@
   @alert info "Deployment succeeded 2 min ago"
   @alert warn "SSL cert expires in 7 days"
 @end
+
+@card
+  @link "← Back to docs" "readme.html"
+@end

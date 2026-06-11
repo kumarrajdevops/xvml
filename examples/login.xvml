@@ -11,3 +11,7 @@
   @link "Don't have an account? Sign up"
 @end
 
+
+@card
+  @link "← Back to docs" "readme.html"
+@end

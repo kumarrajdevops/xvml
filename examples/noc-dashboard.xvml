@@ -99,3 +99,6 @@
   @link "PagerDuty Console" "https://app.pagerduty.com" blank
   @link "Grafana Dashboards" "https://grafana.internal" blank
 @end
+@card
+  @link "← Back to docs" "readme.html"
+@end
