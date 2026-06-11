@@ -10,7 +10,7 @@ import { parse, ParseError } from './parser.js';
 import { askClaude, slugify } from './agent.js';
 
 const require = createRequire(import.meta.url);
-const { version } = require('../package.json') as { version: string };
+const { version } = require('../../package.json') as { version: string };
 
 const XVMLRC_DEFAULT = JSON.stringify(
   { outDir: 'docs', spec: 1 },
