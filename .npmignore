@@ -1,18 +1,26 @@
-# TypeScript source — compiled output in dist/ is published instead
+# Source — compiled dist/ is published instead
 src/
 bin/
 *.ts
-!dist/**
 
-# Development & CI
+# Dev & CI
 examples/
+docs/
 .github/
+coverage/
+
+# Config & meta
 tsconfig.json
 tsconfig*.json
+CLAUDE.md
+CONTRIBUTING.md
+.gitignore
 .gitattributes
 .xvmlrc
+.env*
 
 # Tooling
 node_modules/
 *.log
 .DS_Store
+Thumbs.db

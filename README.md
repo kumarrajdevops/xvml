@@ -38,7 +38,7 @@ xvml build             # compile every .xvml file in the project
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 
-xvml ask "NOC dashboard with alerts and service health"
+xvml ask "Incident dashboard with alerts and service health"
 xvml ask "user settings page" --out settings
 xvml ask "billing page" --model claude-opus-4-8
 xvml ask "simple card" --print   # preview without saving

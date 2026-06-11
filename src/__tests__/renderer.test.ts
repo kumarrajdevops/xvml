@@ -141,9 +141,9 @@ describe('renderer — form commands', () => {
   });
 
   it('@select renders options from pipe-delimited string', async () => {
-    const html = await render('@page test\n@card\n  @select "Team" "NOC | Platform | Cloud"\n@end');
+    const html = await render('@page test\n@card\n  @select "Team" "Incident | Platform | Cloud"\n@end');
     expect(html).toContain('<option');
-    expect(html).toContain('NOC');
+    expect(html).toContain('Incident');
     expect(html).toContain('Platform');
     expect(html).toContain('Cloud');
   });

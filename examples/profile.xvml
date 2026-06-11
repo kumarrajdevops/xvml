@@ -2,9 +2,9 @@
 @card
   @avatar "KS"
   @title "Kumar S"
-  @subtitle "NOC Engineer · Zello"
-  @field name "Full name" value="Kumar S"
-  @field email "Work email" value="kumar@zello.com"
-  @select "Team" "NOC | Platform | Cloud"
+  @subtitle "DevOps Engineer · Freelancer"
+  @field name "Full name" value="Kumar Raj"
+  @field email "Work email" value="kumarrajdevops@gmail.com"
+  @select "Team" "Incident | Platform | Cloud"
   @button "Save changes" primary
 @end

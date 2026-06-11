@@ -1,7 +1,7 @@
 @spec 1
-@meta "description" "NOC Incident Dashboard - Open Alerts, Service Health, and Recent Incidents"
+@meta "description" "Incident Dashboard - Open Alerts, Service Health, and Recent Incidents"
 
-@page "NOC Incident Dashboard" dark
+@page "Incident Dashboard" dark
 
 @card "Live Alert Summary"
   @alert warn "3 critical alerts are currently active. Immediate attention required."

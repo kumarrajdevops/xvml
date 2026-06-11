@@ -51,7 +51,7 @@ xvml build
 
 # 5. Ask Claude to generate and render a page from a description
 export ANTHROPIC_API_KEY=sk-ant-...
-xvml ask "NOC dashboard with alerts and incident table" --out noc
+xvml ask "Incident dashboard with alerts and incident table" --out incident
   @@end
 @end
 

@@ -33,7 +33,7 @@ xvml ask "<task>" --model <id>     # use a specific Claude model
 Requires `ANTHROPIC_API_KEY` in the environment:
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-xvml ask "NOC dashboard with alerts and incident table" --out noc-dashboard
+xvml ask "Incident dashboard with alerts and incident table" --out incident-dashboard
 ```
 
 ## Project Structure

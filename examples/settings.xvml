@@ -6,13 +6,13 @@
     @section "Identity"
       @avatar "KS"
       @title "Kumar S" md
-      @subtitle "NOC Engineer · Zello" muted
+      @subtitle "DevOps Engineer · Freelancer" muted
       @badge "Pro Plan" info
     @end
     @section "Edit Details"
       @field text "Full name" value="Kumar S"
-      @field email "Work email" value="kumar@zello.com"
-      @field text "Job title" value="NOC Engineer"
+      @field email "Work email" value="kumarrajdevops@gmail.com"
+      @field text "Job title" value="Incident Engineer"
       @select "Timezone" "UTC−8 Pacific" "UTC−5 Eastern" "UTC+0 London" "UTC+5:30 India"
       @layout inline
       @button "Save changes" primary
@@ -63,10 +63,10 @@
   @title "Members" sm
   @table bordered
     @row "Name" "Email" "Role" "Status"
-    @row "Kumar S" "kumar@zello.com" "Owner" "Active"
-    @row "Alice R" "alice@zello.com" "Admin" "Active"
-    @row "Bob T" "bob@zello.com" "Member" "Invited"
-    @row "Carol M" "carol@zello.com" "Viewer" "Active"
+    @row "Kumar S" "kumarrajdevops@gmail.com" "Owner" "Active"
+    @row "Alice R" "alice@gmail.com" "Admin" "Active"
+    @row "Bob T" "bob@gmail.com" "Member" "Invited"
+    @row "Carol M" "carol@gmail.com" "Viewer" "Active"
   @end
   @field email "Invite by email" placeholder="teammate@company.com"
   @layout inline
