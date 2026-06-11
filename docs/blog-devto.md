@@ -1,3 +1,14 @@
+<!--
+HOW TO PUBLISH ON DEV.TO
+─────────────────────────
+1. Go to https://dev.to/new
+2. Paste the full content of this file (including the frontmatter below)
+3. Dev.to auto-populates title, tags, and published state from the frontmatter
+4. Add a cover image (1000×420px recommended)
+5. Update the playground URL (xvml-lang.dev) with your actual deployed URL
+6. Hit "Publish"
+-->
+
 ---
 title: I was tired of writing plan.md and login.html for the same page
 published: true
