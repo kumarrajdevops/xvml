@@ -4,7 +4,7 @@
   "description": "XVML — Visual Markup Language CLI renderer",
   "type": "module",
   "bin": {
-    "xvml": "./dist/bin/xvml.js"
+    "xvml": "dist/bin/xvml.js"
   },
   "files": [
     "dist",
@@ -30,7 +30,7 @@
   "homepage": "https://github.com/kumarrajdevops/xvml#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kumarrajdevops/xvml"
+    "url": "git+https://github.com/kumarrajdevops/xvml.git"
   },
   "engines": {
     "node": ">=18.0.0"
