@@ -1,0 +1,37 @@
+{
+  "name": "@vml/cli",
+  "version": "0.1.0",
+  "description": "VML — Visual Markup Language CLI renderer",
+  "type": "module",
+  "bin": {
+    "vml": "./dist/bin/vml.js"
+  },
+  "files": [
+    "dist",
+    "VML_SPEC.md",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && chmod +x dist/bin/vml.js",
+    "vml": "node --loader ts-node/esm --no-warnings bin/vml.ts",
+    "check": "tsc --noEmit"
+  },
+  "keywords": ["vml", "markdown", "html", "cli", "renderer"],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
+    "chalk": "^5.6.2",
+    "commander": "^15.0.0",
+    "fs-extra": "^11.3.5"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^25.9.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}

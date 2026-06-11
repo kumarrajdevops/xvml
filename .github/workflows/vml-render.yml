@@ -1,0 +1,98 @@
+name: Render VML
+
+on:
+  push:
+    paths:
+      - '**.vml'
+
+# Workflow only fires on .vml pushes, so bot commits of .html never re-trigger it.
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # fetch-depth 2 so HEAD~1 is always available
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 1. Discover which .vml files changed in this push ──────────────────
+      - name: Find changed .vml files
+        id: changed
+        run: |
+          files=$(git diff --name-only HEAD~1 | grep '\.vml$' || true)
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files"    >> "$GITHUB_OUTPUT"
+          echo "EOF"       >> "$GITHUB_OUTPUT"
+          if [ -z "$files" ]; then
+            echo "No .vml files changed — nothing to render."
+          else
+            echo "Changed files:"
+            echo "$files"
+          fi
+
+      # ── 2. Render each changed file ────────────────────────────────────────
+      - name: Render changed .vml files
+        if: steps.changed.outputs.files != ''
+        run: |
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            if [ ! -f "$file" ]; then
+              echo "Skipping deleted file: $file"
+              continue
+            fi
+            echo "Rendering: $file"
+            node --loader ts-node/esm --no-warnings bin/vml.ts render "$file"
+          done <<< "${{ steps.changed.outputs.files }}"
+
+      # ── 3. sha256-gate: only commit HTML whose content actually changed ─────
+      - name: Commit changed HTML (sha256-gated)
+        if: steps.changed.outputs.files != ''
+        run: |
+          git config user.name  "vml-bot"
+          git config user.email "vml-bot@users.noreply.github.com"
+
+          commit_files=()
+
+          while IFS= read -r vml_file; do
+            [ -z "$vml_file" ] && continue
+            base=$(basename "$vml_file" .vml)
+            html="docs/${base}.html"
+
+            [ ! -f "$html" ] && continue
+
+            # Hash of newly rendered file
+            new_hash=$(sha256sum "$html" | cut -d' ' -f1)
+
+            # Hash of the version currently in HEAD (empty string if the file is new)
+            old_hash=$(git show "HEAD:${html}" 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "")
+
+            if [ "$new_hash" = "$old_hash" ]; then
+              echo "sha256 unchanged — skipping $html"
+            else
+              echo "sha256 changed  — staging  $html  ($old_hash → $new_hash)"
+              git add "$html"
+              commit_files+=("$(basename "$html")")
+            fi
+          done <<< "${{ steps.changed.outputs.files }}"
+
+          if [ ${#commit_files[@]} -eq 0 ]; then
+            echo "All HTML hashes unchanged — nothing to commit."
+            exit 0
+          fi
+
+          # Commit message lists only the rendered basenames
+          label=$(IFS=', '; echo "${commit_files[*]}")
+          git commit -m "render: $label"
+          git push
