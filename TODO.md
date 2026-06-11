@@ -21,10 +21,11 @@
   - [x] Open in new tab button
   - [ ] Deploy on Vercel (run `vercel` in `packages/playground/`)
 
-- [ ] **4. Blog post** — "I was tired of writing plan.md and login.html for the same page"
-  - [ ] Publish on Dev.to
-  - [ ] Cover the problem, the solution, and a live demo
-  - [ ] Link to npm, GitHub, and playground
+- [x] **4. Blog post** — "I was tired of writing plan.md and login.html for the same page"
+  - [x] Written — see `docs/blog-devto.md`
+  - [ ] Publish on Dev.to (paste content from docs/blog-devto.md)
+  - [x] Covers the problem, solution, live demo, GitHub Action, AI integration
+  - [x] Links to npm, GitHub, playground, spec
 
 - [ ] **5. `@if`, `@each`, `@bind`** — dynamic layer for reactive pages
   - [ ] `@if <condition>` — conditional rendering
