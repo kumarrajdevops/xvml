@@ -27,12 +27,14 @@
   - [x] Covers the problem, solution, live demo, GitHub Action, AI integration
   - [x] Links to npm, GitHub, playground, spec
 
-- [ ] **5. `@if`, `@each`, `@bind`** — dynamic layer for reactive pages
-  - [ ] `@if <condition>` — conditional rendering
-  - [ ] `@each <items>` — loop over data arrays
-  - [ ] `@bind <field>` — two-way data binding
-  - [ ] Update XVML_SPEC.md with new commands
-  - [ ] Update parser + renderer + tests
+- [x] **5. `@if`, `@each`, `@bind`** — dynamic layer for reactive pages
+  - [x] `@if <var>` / `@if !<var>` — conditional block, shown/hidden by JS state
+  - [x] `@each <item> in <collection>` — loop template over state array
+  - [x] `@bind <var> "label" [type]` — two-way bound input field
+  - [x] `@var <key>` — render current state value inline
+  - [x] `@data` — raw JSON block defining initial state
+  - [x] Embedded reactive JS runtime (~40 lines) injected only when dynamic commands used
+  - [x] Parser + renderer + browser.ts + 7 new tests (63 total passing)
 
 - [ ] **6. VS Code extension** — syntax highlighting + live preview panel
   - [ ] TextMate grammar for `.xvml` syntax highlighting

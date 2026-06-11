@@ -109,6 +109,11 @@ export function renderNode(node: XvmlNode, state: RenderState): string {
     case 'codeblock':  return renderCodeblock(node);
     case 'constraint': return renderConstraint(node);
     case 'alert':      return renderAlert(node);
+    case 'if':         return renderIf(node, state);
+    case 'each':       return renderEach(node, state);
+    case 'bind':       return renderBind(node, state);
+    case 'var':        return renderVar(node);
+    case 'data':
     case 'import':
     case 'layout':
     case 'row':
@@ -435,4 +440,51 @@ function renderAlert(node: XvmlNode): string {
     `<span class="xvml-alert__message">${esc(message)}</span>` +
     `</div>`
   );
+}
+
+// ── Dynamic commands ──────────────────────────────────────────────────────────
+
+function renderIf(node: XvmlNode, state: RenderState): string {
+  const expr = node.args[0]?.type === 'keyword' ? node.args[0].value : '';
+  if (!expr) return '';
+  const children = renderChildren(node.children, state);
+  // Hidden by default; JS runtime shows/hides based on state
+  return `<div data-xi="${esc(expr)}" style="display:none">${children}</div>`;
+}
+
+function renderEach(node: XvmlNode, state: RenderState): string {
+  // @each <item> in <collection>
+  const kws = node.args.filter(a => a.type === 'keyword').map(a => a.value);
+  const inIdx = kws.indexOf('in');
+  const itemName = inIdx > 0 ? kws[inIdx - 1] : (kws[0] ?? 'item');
+  const collection = inIdx >= 0 && kws[inIdx + 1] ? kws[inIdx + 1] : kws[kws.length - 1] ?? '';
+  const children = renderChildren(node.children, state);
+  return (
+    `<div data-xe="${esc(collection)}" data-xei="${esc(itemName)}">` +
+    `<template>${children}</template>` +
+    `<div data-xec></div>` +
+    `</div>`
+  );
+}
+
+function renderBind(node: XvmlNode, state: RenderState): string {
+  // @bind <var> "label" [type]
+  const varName = node.args[0]?.type === 'keyword' ? node.args[0].value : '';
+  const label = firstStr(node.args);
+  const inputType = String(node.args.find(a => a.type === 'keyword' && a.value !== varName)?.value ?? 'text');
+  const id = nextId(state, 'bind');
+  return (
+    `<div class="xvml-field">` +
+    `<label class="xvml-field__label" for="${id}">${esc(label || varName)}</label>` +
+    `<input class="xvml-field__input" id="${id}" type="${esc(inputType)}" ` +
+    `data-xb="${esc(varName)}" oninput="xvml.set('${esc(varName)}',this.value)" value="" />` +
+    `</div>`
+  );
+}
+
+function renderVar(node: XvmlNode): string {
+  const key = node.args[0]?.type === 'keyword' ? node.args[0].value
+    : firstStr(node.args);
+  if (!key) return '';
+  return `<span data-xv="${esc(key)}"></span>`;
 }

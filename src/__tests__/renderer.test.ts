@@ -240,3 +240,49 @@ describe('renderer — HTML escaping', () => {
     expect(html).toContain('A &amp; B');
   });
 });
+
+describe('renderer — dynamic commands', () => {
+  it('@if renders a hidden block with data-xi attribute', async () => {
+    const html = await render('@page test\n@if isAdmin\n  @text "Admin"\n@end');
+    expect(html).toContain('data-xi="isAdmin"');
+    expect(html).toContain('display:none');
+  });
+
+  it('@if with negation renders data-xi="!var"', async () => {
+    const html = await render('@page test\n@if !loggedIn\n  @button "Sign in" primary\n@end');
+    expect(html).toContain('data-xi="!loggedIn"');
+  });
+
+  it('@each renders template and items container', async () => {
+    const html = await render('@page test\n@each tag in tags\n  @badge tag\n@end');
+    expect(html).toContain('data-xe="tags"');
+    expect(html).toContain('data-xei="tag"');
+    expect(html).toContain('<template>');
+    expect(html).toContain('data-xec');
+  });
+
+  it('@bind renders a bound input with oninput handler', async () => {
+    const html = await render('@page test\n@bind name "Full name" text');
+    expect(html).toContain('data-xb="name"');
+    expect(html).toContain("xvml.set('name'");
+  });
+
+  it('@var renders a span with data-xv attribute', async () => {
+    const html = await render('@page test\n@var username');
+    expect(html).toContain('data-xv="username"');
+  });
+
+  it('@data injects initial state and runtime script', async () => {
+    const src = '@page test\n@data\n{"count":42,"name":"Alex"}\n@@end\n@var name';
+    const html = await render(src);
+    expect(html).toContain('xvml.init(');
+    expect(html).toContain('"count":42');
+    expect(html).toContain('"name":"Alex"');
+  });
+
+  it('no runtime script when no dynamic commands used', async () => {
+    const html = await render('@page test\n@card\n  @text "hello"\n@end');
+    expect(html).not.toContain('xvml.init(');
+    expect(html).not.toContain('data-xi');
+  });
+});

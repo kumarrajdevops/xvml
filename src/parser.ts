@@ -44,10 +44,12 @@ export interface ParsedDocument {
   page: { title: string; theme: string } | null;
   themes: ThemeBlock[];
   body: XvmlNode[];
+  initialState: Record<string, unknown>;
 }
 
 const BLOCK_COMMANDS = new Set([
   'card', 'section', 'cols', 'stat-row', 'stats', 'list', 'table', 'codeblock', 'theme',
+  'if', 'each', 'data',
 ]);
 
 const DOC_DIRECTIVE_COMMANDS = new Set([
@@ -55,7 +57,7 @@ const DOC_DIRECTIVE_COMMANDS = new Set([
 ]);
 
 const RESERVED_COMMANDS = new Set([
-  'if', 'each', 'bind', 'on:click', 'event', 'agent',
+  'on:click', 'event', 'agent',
 ]);
 
 const KNOWN_COMMANDS = new Set([
@@ -73,6 +75,8 @@ const KNOWN_COMMANDS = new Set([
   'codeblock', 'constraint', 'alert',
   // meta
   'spec', 'file', 'meta', 'import', 'theme', 'renderer',
+  // dynamic
+  'if', 'each', 'bind', 'var', 'data',
 ]);
 
 // Theme names — keywords that identify themes, not page names
@@ -205,12 +209,14 @@ export function parse(source: string): ParsedDocument {
     page: null,
     themes: [],
     body: [],
+    initialState: {},
   };
 
   const lines = source.split('\n');
   const stack: XvmlNode[] = [];
   let rawMode = false;
   let themeMode = false;
+  let dataMode = false;
 
   for (let idx = 0; idx < lines.length; idx++) {
     const lineNum = idx + 1;
@@ -242,6 +248,27 @@ export function parse(source: string): ParsedDocument {
         }
       } else if (!trimmed.startsWith('@')) {
         stack[stack.length - 1]?.rawLines.push(trimmed);
+      }
+      continue;
+    }
+
+    if (dataMode) {
+      if (trimmed === '@@end') {
+        dataMode = false;
+        const dataNode = stack.pop();
+        if (dataNode) {
+          try {
+            const json = dataNode.rawLines.join('\n');
+            if (json.trim()) {
+              const parsed = JSON.parse(json) as Record<string, unknown>;
+              Object.assign(doc.initialState, parsed);
+            }
+          } catch {
+            throw new ParseError('Invalid JSON in @data block', lineNum);
+          }
+        }
+      } else {
+        stack[stack.length - 1]?.rawLines.push(raw);
       }
       continue;
     }
@@ -285,6 +312,7 @@ export function parse(source: string): ParsedDocument {
     if (BLOCK_COMMANDS.has(cmd)) {
       stack.push(node);
       if (cmd === 'codeblock') rawMode = true;
+      if (cmd === 'data') dataMode = true;
       if (cmd === 'theme') themeMode = true;
     }
   }
