@@ -379,7 +379,7 @@ function renderList(node: XvmlNode): string {
 
 function renderCodeblock(node: XvmlNode): string {
   const lang = findKw(node.args, [
-    'ts', 'js', 'json', 'bash', 'html', 'css', 'vml', 'sh',
+    'ts', 'js', 'json', 'bash', 'html', 'css', 'xvml', 'sh',
     'py', 'go', 'rust', 'yaml', 'toml', 'sql', 'md', 'text',
   ]) ?? 'text';
   const filename = node.args.find(a => a.type === 'string')?.value ?? '';

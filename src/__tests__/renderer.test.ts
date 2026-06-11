@@ -6,8 +6,8 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.resolve(__dirname, '../../');
 
-async function render(vml: string): Promise<string> {
-  return renderSource(vml, path.join(SRC, 'test.xvml'));
+async function render(xvml: string): Promise<string> {
+  return renderSource(xvml, path.join(SRC, 'test.xvml'));
 }
 
 describe('renderer — document structure', () => {
@@ -45,9 +45,9 @@ describe('renderer — document structure', () => {
 
 describe('renderer — determinism', () => {
   it('produces byte-identical output on two renders of the same input', async () => {
-    const vml = '@page "Dashboard"\n@card "Stats"\n  @stat "99%" "Uptime" up\n  @progress "CPU" 45 100 success\n@end';
-    const a = await render(vml);
-    const b = await render(vml);
+    const xvml = '@page "Dashboard"\n@card "Stats"\n  @stat "99%" "Uptime" up\n  @progress "CPU" 45 100 success\n@end';
+    const a = await render(xvml);
+    const b = await render(xvml);
     expect(a).toBe(b);
   });
 
@@ -215,15 +215,15 @@ describe('renderer — layout commands', () => {
 
 describe('renderer — codeblock', () => {
   it('@codeblock renders raw content escaped', async () => {
-    const vml = '@page test\n@card\n  @codeblock ts\nconst x = <string>;\n  @@end\n@end';
-    const html = await render(vml);
+    const xvml = '@page test\n@card\n  @codeblock ts\nconst x = <string>;\n  @@end\n@end';
+    const html = await render(xvml);
     expect(html).toContain('language-ts');
     expect(html).toContain('&lt;string&gt;');
   });
 
   it('@codeblock with @end inside renders @end as content', async () => {
-    const vml = '@page test\n@card\n  @codeblock vml\n@card\n  @title "Hi"\n@end\n  @@end\n@end';
-    const html = await render(vml);
+    const xvml = '@page test\n@card\n  @codeblock xvml\n@card\n  @title "Hi"\n@end\n  @@end\n@end';
+    const html = await render(xvml);
     expect(html).toContain('@end');
   });
 });

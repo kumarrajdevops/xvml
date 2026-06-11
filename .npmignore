@@ -10,7 +10,7 @@ examples/
 tsconfig.json
 tsconfig*.json
 .gitattributes
-.vmlrc
+.xvmlrc
 
 # Tooling
 node_modules/

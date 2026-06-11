@@ -87,23 +87,23 @@ describe('parse — argument types', () => {
 
 describe('parse — codeblock raw mode', () => {
   it('treats content inside @codeblock as raw lines', () => {
-    const vml = '@page test\n@card\n  @codeblock ts\nconst x = 1;\n  @@end\n@end';
-    const doc = parse(vml);
+    const xvml = '@page test\n@card\n  @codeblock ts\nconst x = 1;\n  @@end\n@end';
+    const doc = parse(xvml);
     const cb = doc.body[0]!.children[0]!;
     expect(cb.command).toBe('codeblock');
     expect(cb.rawLines[0]).toBe('const x = 1;');
   });
 
   it('@end inside codeblock is treated as content, not a block closer', () => {
-    const vml = '@page test\n@card\n  @codeblock vml\n@card\n  @title "Hi"\n@end\n  @@end\n@end';
-    const doc = parse(vml);
+    const xvml = '@page test\n@card\n  @codeblock xvml\n@card\n  @title "Hi"\n@end\n  @@end\n@end';
+    const doc = parse(xvml);
     const cb = doc.body[0]!.children[0]!;
     expect(cb.rawLines).toContain('@end');
   });
 
   it('@@end closes a codeblock', () => {
-    const vml = '@page test\n@card\n  @codeblock bash\necho hello\n  @@end\n  @text "after"\n@end';
-    const doc = parse(vml);
+    const xvml = '@page test\n@card\n  @codeblock bash\necho hello\n  @@end\n  @text "after"\n@end';
+    const doc = parse(xvml);
     const children = doc.body[0]!.children;
     expect(children[0]!.command).toBe('codeblock');
     expect(children[1]!.command).toBe('text');
