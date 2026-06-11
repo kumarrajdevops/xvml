@@ -5,6 +5,7 @@ import { watch as fsWatch } from 'fs';
 import path from 'path';
 import { createRequire } from 'module';
 import fse from 'fs-extra';
+import { glob } from 'glob';
 import { renderFile, outputPath } from './renderer.js';
 import { parse, ParseError } from './parser.js';
 import { askClaude, slugify } from './agent.js';
@@ -41,20 +42,44 @@ async function doRender(file: string): Promise<void> {
   console.log(`${chalk.green('✓')} ${chalk.dim(file)} → ${chalk.cyan(out)}`);
 }
 
-async function doCheck(file: string): Promise<boolean> {
+interface CheckResult {
+  ok: boolean;
+  warnings: string[];
+}
+
+async function doCheck(file: string): Promise<CheckResult> {
+  const warnings: string[] = [];
   try {
     const source = await fs.readFile(file, 'utf-8');
-    parse(source);
-    console.log(`${chalk.green('✓')} ${file}`);
-    return true;
+    const doc = parse(source);
+
+    // Spec-level checks
+    if (doc.specVersion === 1 && !source.includes('@spec')) {
+      warnings.push('missing @spec directive (defaulting to spec 1)');
+    }
+    if (!doc.page) {
+      warnings.push('missing @page directive');
+    }
+
+    if (warnings.length > 0) {
+      console.log(`${chalk.yellow('⚠')} ${file}`);
+      for (const w of warnings) {
+        console.log(`  ${chalk.yellow('warn')} ${w}`);
+      }
+    } else {
+      console.log(`${chalk.green('✓')} ${file}`);
+    }
+    return { ok: true, warnings };
   } catch (err) {
     if (err instanceof ParseError) {
-      console.error(`${chalk.red('✕')} ${file}: ${chalk.red(err.message)}`);
+      console.error(`${chalk.red('✕')} ${file}`);
+      console.error(`  ${chalk.red('error')} ${err.message}`);
     } else {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`${chalk.red('✕')} ${file}: ${msg}`);
+      console.error(`${chalk.red('✕')} ${file}`);
+      console.error(`  ${chalk.red('error')} ${msg}`);
     }
-    return false;
+    return { ok: false, warnings };
   }
 }
 
@@ -103,27 +128,48 @@ export function buildCli(): Command {
     .description('Check .xvml files for spec compliance')
     .action(async (patterns: string[]) => {
       let passed = 0;
+      let warned = 0;
       let failed = 0;
+
+      async function checkFile(f: string): Promise<void> {
+        const result = await doCheck(f);
+        if (!result.ok) failed++;
+        else if (result.warnings.length > 0) { warned++; passed++; }
+        else passed++;
+      }
+
       for (const pattern of patterns) {
         const stat = await fs.stat(pattern).catch(() => null);
         if (stat?.isDirectory()) {
           const files = await findVmlFiles(pattern);
-          for (const f of files) {
-            (await doCheck(f)) ? passed++ : failed++;
+          for (const f of files) await checkFile(f);
+        } else if (pattern.includes('*') || pattern.includes('{')) {
+          // Glob pattern
+          const matches = await glob(pattern);
+          const files = matches.filter(f => f.endsWith('.xvml'));
+          if (files.length === 0) {
+            console.log(chalk.yellow(`No .xvml files matched: ${pattern}`));
           }
-        } else if (pattern.endsWith('.xvml')) {
-          (await doCheck(pattern)) ? passed++ : failed++;
+          for (const f of files) await checkFile(f);
+        } else {
+          await checkFile(pattern);
         }
       }
+
       const total = passed + failed;
       if (total === 0) {
         console.log(chalk.yellow('No .xvml files found.'));
         return;
       }
-      console.log(
-        `\n${chalk.bold(String(total))} file${total === 1 ? '' : 's'} checked — ` +
-        `${chalk.green(String(passed))} passed, ${failed > 0 ? chalk.red(String(failed)) : chalk.dim('0')} failed`,
-      );
+
+      const summary = [
+        `\n${chalk.bold(String(total))} file${total === 1 ? '' : 's'} checked —`,
+        `${chalk.green(String(passed))} passed`,
+        warned > 0 ? `(${chalk.yellow(String(warned))} with warnings)` : '',
+        `${failed > 0 ? chalk.red(String(failed)) : chalk.dim('0')} failed`,
+      ].filter(Boolean).join(' ');
+
+      console.log(summary);
       if (failed > 0) process.exit(1);
     });
 

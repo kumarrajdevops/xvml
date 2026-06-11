@@ -8,10 +8,10 @@
   - [x] Commit rendered HTML back to `/docs` (sha256-gated to avoid empty commits)
   - [x] Add to `.github/workflows/xvml-render.yml`
 
-- [ ] **2. `xvml check`** — spec compliance command that verifies files against XVML spec constraints
-  - [ ] Exit code 1 on any parse or spec error
-  - [ ] Support glob patterns: `xvml check src/**/*.xvml`
-  - [ ] Print line numbers with errors
+- [x] **2. `xvml check`** — spec compliance command that verifies files against XVML spec constraints
+  - [x] Exit code 1 on any parse or spec error
+  - [x] Support glob patterns: `xvml check src/**/*.xvml`
+  - [x] Print line numbers with errors
 
 - [ ] **3. Web playground** — paste `.xvml`, see live render, shareable links
   - [ ] Domain: xvml-lang.dev
