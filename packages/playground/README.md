@@ -12,41 +12,79 @@ npm run dev
 
 Opens at `http://localhost:5173`
 
-## Deploy to Vercel
+## Build
 
-1. Install Vercel CLI (once):
-   ```bash
-   npm install -g vercel
-   ```
+```bash
+cd packages/playground
+npm install
+npm run build
+# Static output → packages/playground/dist/
+```
 
-2. Deploy from the playground directory:
-   ```bash
-   cd packages/playground
-   vercel
-   ```
+The output in `dist/` is a fully static site (HTML + JS + CSS). No server required — deploy it anywhere that serves static files.
 
-3. Follow the prompts — select your Vercel account and project name.
+---
 
-4. For production deploy:
-   ```bash
-   vercel --prod
-   ```
+## Deploy
 
-## Custom domain (xvml-lang.dev)
+### Vercel
 
-After deploying to Vercel:
+```bash
+npm install -g vercel
+cd packages/playground
+vercel --prod
+```
 
-1. Go to **Vercel dashboard → Project → Settings → Domains**
-2. Add `xvml-lang.dev`
-3. At your DNS registrar, add:
-   - `A` record: `@` → `76.76.21.21`
-   - `CNAME` record: `www` → `cname.vercel-dns.com`
-4. Vercel auto-provisions an SSL certificate within minutes
+- **Build command:** `npm run build`
+- **Output directory:** `dist`
+- **Install command:** `npm install`
 
-## Build for static hosting (GitHub Pages etc.)
+### Cloudflare Pages
+
+1. Connect your GitHub repo in the Cloudflare Pages dashboard
+2. Set root directory to `packages/playground`
+3. Build command: `npm run build`
+4. Output directory: `dist`
+
+### Render
+
+1. New → Static Site → connect GitHub repo
+2. Root directory: `packages/playground`
+3. Build command: `npm run build`
+4. Publish directory: `dist`
+
+### Railway
+
+1. New project → Deploy from GitHub
+2. Set root directory: `packages/playground`
+3. Build command: `npm run build`
+4. Start command: *(leave empty — Railway serves static sites automatically)*
+5. Or use `npx serve dist` as the start command
+
+### GitHub Pages
 
 ```bash
 cd packages/playground
 npm run build
-# Output is in packages/playground/dist/
+# Copy dist/ contents to your gh-pages branch, or use the gh-pages package:
+npx gh-pages -d dist
 ```
+
+### Any static host (S3, Nginx, Caddy, etc.)
+
+Run `npm run build`, then serve the `dist/` folder as a static directory. No special server config needed — the app is entirely client-side.
+
+---
+
+## Custom domain (xvml-lang.dev)
+
+After deploying, add the domain in your hosting provider's dashboard, then configure DNS at your registrar:
+
+| Host provider | DNS record |
+|---|---|
+| Vercel | `A @ 76.76.21.21` + `CNAME www cname.vercel-dns.com` |
+| Cloudflare Pages | `CNAME @ <project>.pages.dev` |
+| Render | `CNAME @ <project>.onrender.com` |
+| Railway | `CNAME @ <project>.railway.app` |
+
+SSL is provisioned automatically by all of the above.
