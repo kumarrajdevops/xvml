@@ -17,12 +17,13 @@ npm install -g @xvml/cli
 ## Quick start
 
 ```bash
-xvml init              # scaffold CLAUDE.md + .xvmlrc in the current project
-xvml render login.xvml  # compile one file → docs/login.html
-xvml build             # compile every .xvml file in the project
+xvml init                        # scaffold CLAUDE.md + .xvmlrc
+xvml render login.xvml           # compile one file → docs/login.html
+xvml build                       # compile every .xvml file in the project
+xvml check "**/*.xvml"           # spec compliance check
 ```
 
-## All commands
+## CLI commands
 
 | Command | Description |
 |---|---|
@@ -30,8 +31,8 @@ xvml build             # compile every .xvml file in the project
 | `xvml render <file.xvml>` | Render one file to `docs/<name>.html` |
 | `xvml render <file.xvml> --watch` | Re-render on every save |
 | `xvml build` | Render all `.xvml` files in the project |
-| `xvml check <file\|dir>` | Spec compliance check, exits 1 on errors |
-| `xvml ask "<task>"` | Ask Claude to generate + render a XVML page |
+| `xvml check <file\|dir\|glob>` | Spec compliance check, exits 1 on errors |
+| `xvml ask "<task>"` | Ask Claude to generate + render an XVML page |
 
 ## AI integration
 
@@ -48,12 +49,12 @@ Requires an [Anthropic API key](https://console.anthropic.com/settings/keys). Us
 
 ---
 
-## Example
+## Static example
 
 ```
-@page login
-@card
-  @title "Welcome back"
+@spec 1
+@page login light
+@card "Welcome back"
   @subtitle "Sign in to your account"
   @field email "Email address"
   @field password "Password" secret
@@ -65,8 +66,54 @@ Requires an [Anthropic API key](https://console.anthropic.com/settings/keys). Us
 @end
 ```
 
-`xvml render login.xvml` produces `docs/login.html` — a single, self-contained file with all
-styles inlined. Same input always produces byte-identical output.
+`xvml render login.xvml` → `docs/login.html` — single self-contained file, byte-identical every time.
+
+---
+
+## Dynamic pages
+
+XVML supports reactive pages via `@if`, `@each`, `@bind`, `@var`, and `@data`.
+A lightweight JS runtime (~40 lines) is embedded only when dynamic commands are used.
+
+```
+@spec 1
+@page "Counter" light
+
+@data
+{ "count": 0, "name": "Alex" }
+@@end
+
+@card "Hello"
+  @var name
+  @bind name "Your name" text
+@end
+
+@card "Visibility"
+  @if count
+    @alert "count is non-zero" info
+  @end
+  @if !count
+    @alert "count is zero" warning
+  @end
+@end
+
+@card "List from state"
+  @each tag in tags
+    @badge tag neutral
+  @end
+@end
+```
+
+| Command | What it does |
+|---|---|
+| `@data` | Raw JSON block (`@@end`) — sets initial reactive state |
+| `@if <var>` | Show block when `state.var` is truthy |
+| `@if !<var>` | Show block when `state.var` is falsy |
+| `@each item in collection` | Loop template for each item in `state.collection` |
+| `@bind <var> "label"` | Two-way input — syncs to state on every keystroke |
+| `@var <key>` | Render `state.key` inline, auto-updates |
+
+Control state from the browser console: `xvml.set('count', 5)` · `xvml.state`
 
 ---
 
@@ -79,6 +126,7 @@ styles inlined. Same input always produces byte-identical output.
 | No build toolchain | ✓ | ✓ | **✓** |
 | Self-contained output | — | ✗ | **✓** |
 | Deterministic | ✓ | — | **✓** |
+| Reactive / dynamic | ✗ | ✓ | **✓** |
 
 ---
 
@@ -93,4 +141,5 @@ its arguments, and the HTML it renders to.
 
 - **GitHub:** [github.com/kumarrajdevops/xvml](https://github.com/kumarrajdevops/xvml)
 - **npm:** [@xvml/cli](https://npmjs.com/package/@xvml/cli)
+- **Playground:** [xvml-lang.dev](https://xvml-lang.dev)
 - **Issues:** [github.com/kumarrajdevops/xvml/issues](https://github.com/kumarrajdevops/xvml/issues)

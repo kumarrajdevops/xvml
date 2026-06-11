@@ -9,9 +9,9 @@
     @section "What is XVML?"
       @title "eXpressive Visual Markup Language" lg
       @subtitle "Write plain text. Render live UI."
-      @text "XVML sits between Markdown and HTML — as readable as Markdown, as structured as HTML. The CLI compiles .xvml files into fully self-contained, deterministic HTML." muted
+      @text "XVML sits between Markdown and HTML — as readable as Markdown, as structured as HTML. The CLI compiles .xvml files into fully self-contained, deterministic HTML — static or reactive." muted
       @layout inline
-      @badge "v0.1.0" info
+      @badge "v0.1.3" info
       @badge "MIT" neutral
       @badge "Node ≥ 18" neutral
     @end
@@ -23,6 +23,7 @@
         @item "Single output file per source file — zero dependencies at runtime"
         @item "Works offline once installed"
         @item "Claude AI integration via xvml ask"
+        @item "Reactive pages via @if, @each, @bind — no framework needed"
       @end
     @end
   @end
@@ -49,7 +50,10 @@ xvml render login.xvml --watch
 # 4. Render every .xvml file in the project at once
 xvml build
 
-# 5. Ask Claude to generate and render a page from a description
+# 5. Spec compliance check (glob supported)
+xvml check "**/*.xvml"
+
+# 6. Ask Claude to generate and render a page from a description
 export ANTHROPIC_API_KEY=sk-ant-...
 xvml ask "Incident dashboard with alerts and incident table" --out incident
   @@end
@@ -62,7 +66,7 @@ xvml ask "Incident dashboard with alerts and incident table" --out incident
     @row "xvml render <file.xvml>" "Compile one file" "docs/<name>.html"
     @row "xvml render <file.xvml> --watch" "Re-render on every save" "docs/<name>.html"
     @row "xvml build" "Render all .xvml files in project" "docs/*.html"
-    @row "xvml check <file|dir>" "Spec compliance check — exits 1 on errors" "stdout report"
+    @row "xvml check <file|dir|glob>" "Spec compliance — exits 1 on errors, warns on missing @spec / @page" "stdout report"
     @row "xvml ask \"<task>\"" "Ask Claude to generate + render an XVML page" "examples/<slug>.xvml + docs/<slug>.html"
   @end
 @end
@@ -84,51 +88,60 @@ xvml ask "simple profile card" --print
 # Use a specific Claude model
 xvml ask "dashboard" --model claude-opus-4-8
   @@end
-  @cols 3
-    @section "How it works"
-      @list ordered
-        @item "XVML_SPEC.md sent as system prompt"
-        @item "Claude generates valid XVML at temperature 0"
-        @item "Parser validates before saving"
-        @item "Renderer produces self-contained HTML"
-      @end
-    @end
-    @section "Options"
-      @list unordered
-        @item "--out <name>  custom filename slug"
-        @item "--model <id>  Claude model to use"
-        @item "--print       show XVML, don't save"
-      @end
-    @end
-    @section "Output"
-      @list check
-        @item "examples/<slug>.xvml saved"
-        @item "docs/<slug>.html rendered"
-        @item "Parse error shown if XVML is invalid"
-        @item "No partial writes on failure"
-      @end
-    @end
-  @end
   @alert info "Temperature 0 means the same task description always generates the same XVML."
 @end
 
-@card "Example .xvml source"
-  @text "A login page — 11 lines of XVML, zero HTML." muted
-  @codeblock xvml "examples/login.xvml"
-@page login
-@card
-  @title "Welcome again"
-  @subtitle "Sign in to your account"
-  @field email "Email address"
-  @field password "Password" secret
-  @checkbox "Remember me"
-  @button "Sign in" primary
-  @divider "or"
-  @button "Continue with Google" secondary
-  @link "Don't have an account? Sign up"
+@card "Dynamic pages — @if, @each, @bind"
+  @subtitle "Add reactivity without a framework. A 40-line JS runtime is embedded only when needed."
+  @codeblock xvml
+@spec 1
+@page "Dynamic demo" light
+
+@data
+{ "name": "Alex", "loggedIn": true, "tags": ["CLI", "XVML", "AI"] }
+# close @data with @@end
+
+@card "Welcome"
+  @var name
+  @bind name "Your name" text
+@end
+
+@card "Conditional"
+  @if loggedIn
+    @alert "You are logged in" success
+  @end
+  @if !loggedIn
+    @button "Sign in" primary
+  @end
+@end
+
+@card "Loop"
+  @each tag in tags
+    @badge tag neutral
+  @end
 @end
   @@end
-  @alert info "xvml render login.xvml produces docs/login.html — one self-contained file, all styles inlined."
+  @cols 2
+    @section "Dynamic commands"
+      @table compact
+        @row "Command" "What it does"
+        @row "@data ... @@end" "Define initial state as JSON"
+        @row "@if <var>" "Show block when state.var is truthy"
+        @row "@if !<var>" "Show block when state.var is falsy"
+        @row "@each item in collection" "Loop template over state array"
+        @row "@bind <var> \"label\"" "Two-way bound input field"
+        @row "@var <key>" "Render state value inline"
+      @end
+    @end
+    @section "Browser console API"
+      @list unordered
+        @item "xvml.state — view current state"
+        @item "xvml.set('key', value) — update and re-render"
+        @item "xvml.get('key') — read a value"
+        @item "xvml.init(obj) — set initial state"
+      @end
+    @end
+  @end
 @end
 
 @card "Why XVML?"
@@ -143,6 +156,7 @@ xvml ask "dashboard" --model claude-opus-4-8
     @row "Data components (tables, stats)" "No" "Manual" "Yes"
     @row "Light / dark mode built-in" "No" "Manual" "Yes"
     @row "Mobile responsive by default" "No" "Manual" "Yes"
+    @row "Reactive / dynamic layer" "No" "Yes" "Yes"
     @row "AI page generation (xvml ask)" "No" "No" "Yes"
   @end
 @end
@@ -173,7 +187,10 @@ xvml ask "dashboard" --model claude-opus-4-8
         @item "@stats ... @end"
         @item "@table ... @end"
         @item "@list ... @end"
+        @item "@if ... @end"
+        @item "@each ... @end"
         @item "@codeblock ... @@end"
+        @item "@data ... @@end"
       @end
     @end
     @section "Meta directives"
@@ -200,22 +217,10 @@ xvml ask "dashboard" --model claude-opus-4-8
   @constraint "api-key" "ANTHROPIC_API_KEY must be set in environment for xvml ask" must
 @end
 
-@card "Reserved — future commands"
-  @alert warning "These commands are defined by name only. Using them in XVML 1.0 files causes a render error."
-  @table compact
-    @row "Command" "Intended purpose"
-    @row "@if" "Conditional rendering based on a bound variable"
-    @row "@each" "Loop over a data array, render children once per item"
-    @row "@bind" "Two-way binding between a form field and a named variable"
-    @row "@on:click" "Attach a click handler expression to the nearest element"
-    @row "@event" "Declare a named custom event the page can emit"
-    @row "@agent" "Invoke an AI agent inline and render its structured output"
-  @end
-@end
-
 @card "Links"
   @layout inline
   @link "XVML_SPEC.md — full language reference" "XVML_SPEC.md"
   @link "npm: @xvml/cli" "https://npmjs.com/package/@xvml/cli" blank
   @link "GitHub" "https://github.com/kumarrajdevops/xvml" blank
+  @link "Playground" "https://xvml-lang.dev" blank
 @end

@@ -1,6 +1,6 @@
 # xvml
 
-A standalone CLI tool that renders `.xvml` files into deterministic self-contained HTML. XVML is a format between Markdown and HTML — plain text like Markdown, renders as live UI like HTML.
+A standalone CLI tool that renders `.xvml` files into deterministic self-contained HTML. XVML is a format between Markdown and HTML — plain text like Markdown, renders as live UI like HTML. Supports both static and reactive/dynamic pages.
 
 ## Rules
 
@@ -16,14 +16,14 @@ A standalone CLI tool that renders `.xvml` files into deterministic self-contain
 ## CLI Commands
 
 ```bash
-xvml init                          # scaffold CLAUDE.md + .xvmlrc
-xvml render <file.xvml>             # render one file → docs/<name>.html
-xvml render <file.xvml> --watch     # re-render on every save
-xvml build                         # render all .xvml files in project
-xvml check <file|dir>              # spec compliance check, exits 1 on error
-xvml ask "<task>" [--out <name>]   # ask Claude to generate + render a page
-xvml ask "<task>" --print          # preview generated XVML without saving
-xvml ask "<task>" --model <id>     # use a specific Claude model
+xvml init                              # scaffold CLAUDE.md + .xvmlrc
+xvml render <file.xvml>               # render one file → docs/<name>.html
+xvml render <file.xvml> --watch       # re-render on every save
+xvml build                            # render all .xvml files in project
+xvml check <file|dir|glob>            # spec compliance check, exits 1 on error
+xvml ask "<task>" [--out <name>]      # ask Claude to generate + render a page
+xvml ask "<task>" --print             # preview generated XVML without saving
+xvml ask "<task>" --model <id>        # use a specific Claude model
 ```
 
 ## AI Integration (xvml ask)
@@ -36,27 +36,58 @@ export ANTHROPIC_API_KEY=sk-ant-...
 xvml ask "Incident dashboard with alerts and incident table" --out incident-dashboard
 ```
 
+## Dynamic Commands
+
+When using `@if`, `@each`, `@bind`, `@var`, or `@data` — a small reactive JS runtime is embedded in the output automatically.
+
+```
+@data
+{ "name": "Alex", "items": ["a", "b"] }
+@@end
+
+@if loggedIn
+  @text "Welcome back"
+@end
+
+@each item in items
+  @badge item neutral
+@end
+
+@bind name "Your name" text
+@var name
+```
+
+Control state from browser console: `xvml.set('key', value)` · `xvml.state`
+
 ## Project Structure
 
 ```
 src/
-  parser.ts     — tokenizer: .xvml source → AST
+  parser.ts     — tokenizer: .xvml source → AST (XvmlNode)
   templates.ts  — one HTML template function per @command
   renderer.ts   — AST → deterministic self-contained HTML
+  browser.ts    — browser-safe renderSource (no fs/path deps, used by playground)
   styles.ts     — inlined CSS (light/dark/responsive)
+  runtime.ts    — reactive JS runtime string (~40 lines, embedded when dynamic commands used)
   cli.ts        — commander CLI (render/build/check/ask/init)
   agent.ts      — Claude API integration for xvml ask
 bin/
   xvml.ts        — CLI entry point (shebang)
 examples/       — .xvml source files
 docs/           — rendered .html output (committed to repo)
-XVML_SPEC.md     — formal specification for all @commands
+packages/
+  playground/   — Vite web app: split-pane editor + live preview (xvml-lang.dev)
+XVML_SPEC.md    — formal specification for all @commands
+TODO.md         — v1.0.0 roadmap with checklist
 ```
 
 ## Key Syntax Notes
 
-- `@codeblock` must be closed with `@@end` (not `@end`) when code inside contains `@end` lines
-- `@alert` variant keyword comes BEFORE the message string: `@alert warn "message"`
-- `@stat` value (big number) is first string, label is second: `@stat "99%" "Uptime"`
+- Every command starts with `@`, blocks close with `@end`
+- `@codeblock` and `@data` close with `@@end` (raw mode — `@end` can appear inside)
+- `@alert` variant keyword comes BEFORE the message: `@alert warning "message"`
+- `@stat` value is first string, label is second: `@stat "99%" "Uptime"`
 - `@field` type keyword comes before label: `@field email "Email address"`
-- `@select` options can be pipe-delimited in a single string: `@select "Team" "A | B | C"`
+- `@select` options are pipe-delimited: `@select "Team" "A | B | C"`
+- `@if !<var>` negates the condition (show when falsy)
+- `@each item in collection` — `in` keyword separates item name from collection name
