@@ -1,0 +1,83 @@
+@page "Account Settings"
+@nav Account | Security | Billing | Team | API
+
+@card "Profile"
+  @cols 2
+    @section "Identity"
+      @avatar "KS"
+      @title "Kumar S" md
+      @subtitle "NOC Engineer · Zello" muted
+      @badge "Pro Plan" info
+    @end
+    @section "Edit Details"
+      @field text "Full name" value="Kumar S"
+      @field email "Work email" value="kumar@zello.com"
+      @field text "Job title" value="NOC Engineer"
+      @select "Timezone" "UTC−8 Pacific" "UTC−5 Eastern" "UTC+0 London" "UTC+5:30 India"
+      @layout inline
+      @button "Save changes" primary
+      @button "Discard" default
+    @end
+  @end
+@end
+
+@card "Security"
+  @alert info "Two-factor authentication is enabled on this account."
+
+  @section "Password" divided
+    @field password "Current password"
+    @field password "New password"
+    @field password "Confirm new password"
+    @button "Update password" primary
+  @end
+
+  @section "Active sessions" divided
+    @table striped
+      @row "Device" "Location" "Last active" "Status"
+      @row "Chrome · macOS" "San Francisco, US" "Just now" "Current"
+      @row "Safari · iPhone" "San Francisco, US" "2h ago" "Active"
+      @row "Firefox · Linux" "Austin, TX" "3 days ago" "Active"
+    @end
+    @button "Revoke all other sessions" danger sm
+  @end
+@end
+
+@card "Billing"
+  @stat-row
+    @stat "Current plan" "Pro" neutral
+    @stat "Next billing" "Jul 11, 2026" neutral
+    @stat "Seats used" "4 / 10" neutral
+  @end
+  @divider
+  @section "Usage this month" divided
+    @progress "API calls" 7840 10000 success
+    @progress "Storage" 4300 10000 warning
+    @progress "Rendered pages" 9100 10000 error
+  @end
+  @layout inline
+  @button "Upgrade plan" primary
+  @button "Download invoice" default
+@end
+
+@card "Team"
+  @title "Members" sm
+  @table bordered
+    @row "Name" "Email" "Role" "Status"
+    @row "Kumar S" "kumar@zello.com" "Owner" "Active"
+    @row "Alice R" "alice@zello.com" "Admin" "Active"
+    @row "Bob T" "bob@zello.com" "Member" "Invited"
+    @row "Carol M" "carol@zello.com" "Viewer" "Active"
+  @end
+  @field email "Invite by email" placeholder="teammate@company.com"
+  @layout inline
+  @select "Role" "Admin" "Member" "Viewer"
+  @button "Send invite" primary
+@end
+
+@card "Danger zone" outlined
+  @alert error "These actions are permanent and cannot be undone."
+  @section "Delete account" divided
+    @text "All your data, projects, and settings will be permanently deleted." muted
+    @button "Delete my account" danger
+  @end
+@end

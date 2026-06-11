@@ -1,4 +1,4 @@
-import type { Arg, KeyValueArg, VmlNode } from './parser.js';
+import type { Arg, KeyValueArg, XvmlNode } from './parser.js';
 
 export interface RenderState {
   readonly idCounter: { n: number };
@@ -29,7 +29,7 @@ function cls(...parts: (string | false | null | undefined)[]): string {
 }
 
 function nextId(state: RenderState, prefix: string): string {
-  return `vml-${prefix}-${state.idCounter.n++}`;
+  return `xvml-${prefix}-${state.idCounter.n++}`;
 }
 
 // First string arg
@@ -66,7 +66,7 @@ function findKV(args: readonly Arg[], key: string): string | undefined {
 // ── Render tree ───────────────────────────────────────────────────────────────
 
 // @layout on a line consumes all subsequent siblings in that block.
-export function renderChildren(nodes: readonly VmlNode[], state: RenderState): string {
+export function renderChildren(nodes: readonly XvmlNode[], state: RenderState): string {
   let html = '';
   let i = 0;
   while (i < nodes.length) {
@@ -74,7 +74,7 @@ export function renderChildren(nodes: readonly VmlNode[], state: RenderState): s
     if (node.command === 'layout') {
       const mode = node.args[0]?.type === 'keyword' ? node.args[0].value : 'stack';
       const inner = nodes.slice(i + 1).map(n => renderNode(n, state)).join('');
-      html += `<div class="vml-layout${mode !== 'stack' ? ` vml-layout--${mode}` : ''}">${inner}</div>`;
+      html += `<div class="xvml-layout${mode !== 'stack' ? ` xvml-layout--${mode}` : ''}">${inner}</div>`;
       break;
     }
     html += renderNode(node, state);
@@ -83,7 +83,7 @@ export function renderChildren(nodes: readonly VmlNode[], state: RenderState): s
   return html;
 }
 
-export function renderNode(node: VmlNode, state: RenderState): string {
+export function renderNode(node: XvmlNode, state: RenderState): string {
   switch (node.command) {
     case 'card':       return renderCard(node, state);
     case 'section':    return renderSection(node, state);
@@ -121,99 +121,99 @@ export function renderNode(node: VmlNode, state: RenderState): string {
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 
-function renderCard(node: VmlNode, state: RenderState): string {
+function renderCard(node: XvmlNode, state: RenderState): string {
   const label = node.args.find(a => a.type === 'string')?.value ?? '';
   const mod = findKw(node.args, ['flat', 'outlined', 'compact']);
-  const labelHtml = label ? `<h2 class="vml-card__label">${esc(label)}</h2>` : '';
+  const labelHtml = label ? `<h2 class="xvml-card__label">${esc(label)}</h2>` : '';
   const body = renderChildren(node.children, state);
-  return `<section class="${cls('vml-card', mod && `vml-card--${mod}`)}">${labelHtml}<div class="vml-card__body">${body}</div></section>`;
+  return `<section class="${cls('xvml-card', mod && `xvml-card--${mod}`)}">${labelHtml}<div class="xvml-card__body">${body}</div></section>`;
 }
 
-function renderSection(node: VmlNode, state: RenderState): string {
+function renderSection(node: XvmlNode, state: RenderState): string {
   const label = firstStr(node.args);
   const mod = findKw(node.args, ['divided', 'collapsible']);
   const body = renderChildren(node.children, state);
   return (
-    `<div class="${cls('vml-section', mod && `vml-section--${mod}`)}">` +
-    `<h3 class="vml-section__label">${esc(label)}</h3>` +
-    `<div class="vml-section__body">${body}</div>` +
+    `<div class="${cls('xvml-section', mod && `xvml-section--${mod}`)}">` +
+    `<h3 class="xvml-section__label">${esc(label)}</h3>` +
+    `<div class="xvml-section__body">${body}</div>` +
     `</div>`
   );
 }
 
-function renderCols(node: VmlNode, state: RenderState): string {
+function renderCols(node: XvmlNode, state: RenderState): string {
   const count = node.args.find(a => a.type === 'number')?.value ?? 2;
   const wrapped = node.children
-    .map(c => `<div class="vml-col">${renderNode(c, state)}</div>`)
+    .map(c => `<div class="xvml-col">${renderNode(c, state)}</div>`)
     .join('');
-  return `<div class="vml-cols vml-cols--${count}">${wrapped}</div>`;
+  return `<div class="xvml-cols xvml-cols--${count}">${wrapped}</div>`;
 }
 
-function renderStatRow(node: VmlNode, state: RenderState): string {
-  return `<div class="vml-stat-row">${node.children.map(c => renderNode(c, state)).join('')}</div>`;
+function renderStatRow(node: XvmlNode, state: RenderState): string {
+  return `<div class="xvml-stat-row">${node.children.map(c => renderNode(c, state)).join('')}</div>`;
 }
 
-function renderStats(node: VmlNode, state: RenderState): string {
-  return `<div class="vml-stats">${node.children.map(c => renderNode(c, state)).join('')}</div>`;
+function renderStats(node: XvmlNode, state: RenderState): string {
+  return `<div class="xvml-stats">${node.children.map(c => renderNode(c, state)).join('')}</div>`;
 }
 
 // ── Navigation / Presentation ─────────────────────────────────────────────────
 
-function renderNav(node: VmlNode): string {
+function renderNav(node: XvmlNode): string {
   // Args: keyword items separated by "|" keyword, e.g. Home | Projects | Settings
   const items = node.args
     .filter((a): a is Extract<Arg, { type: 'keyword' }> => a.type === 'keyword' && a.value !== '|')
     .map(a => a.value);
   const links = items
-    .map(item => `<li><a class="vml-nav__link" href="#">${esc(item)}</a></li>`)
+    .map(item => `<li><a class="xvml-nav__link" href="#">${esc(item)}</a></li>`)
     .join('');
-  return `<nav class="vml-nav"><ul class="vml-nav__links">${links}</ul></nav>`;
+  return `<nav class="xvml-nav"><ul class="xvml-nav__links">${links}</ul></nav>`;
 }
 
-function renderAvatar(node: VmlNode): string {
+function renderAvatar(node: XvmlNode): string {
   const initials = firstStr(node.args);
-  return `<div class="vml-avatar">${esc(initials)}</div>`;
+  return `<div class="xvml-avatar">${esc(initials)}</div>`;
 }
 
 // ── Content ───────────────────────────────────────────────────────────────────
 
-function renderTitle(node: VmlNode): string {
+function renderTitle(node: XvmlNode): string {
   const text = firstStr(node.args);
   const size = findKw(node.args, ['xl', 'lg', 'md', 'sm']) ?? 'lg';
-  return `<h1 class="vml-title vml-title--${size}">${esc(text)}</h1>`;
+  return `<h1 class="xvml-title xvml-title--${size}">${esc(text)}</h1>`;
 }
 
-function renderSubtitle(node: VmlNode): string {
+function renderSubtitle(node: XvmlNode): string {
   const text = firstStr(node.args);
   const muted = hasKw(node.args, 'muted');
-  return `<p class="${cls('vml-subtitle', muted && 'vml-subtitle--muted')}">${esc(text)}</p>`;
+  return `<p class="${cls('xvml-subtitle', muted && 'xvml-subtitle--muted')}">${esc(text)}</p>`;
 }
 
-function renderText(node: VmlNode): string {
+function renderText(node: XvmlNode): string {
   const content = firstStr(node.args);
   const mod = findKw(node.args, ['sm', 'muted', 'bold', 'mono', 'error', 'success']);
-  return `<p class="${cls('vml-text', mod && `vml-text--${mod}`)}">${esc(content)}</p>`;
+  return `<p class="${cls('xvml-text', mod && `xvml-text--${mod}`)}">${esc(content)}</p>`;
 }
 
-function renderDivider(node: VmlNode): string {
+function renderDivider(node: XvmlNode): string {
   const text = node.args.find(a => a.type === 'string')?.value;
   if (text) {
     return (
-      `<div class="vml-divider vml-divider--text">` +
-      `<span class="vml-divider__line"></span>` +
-      `<span class="vml-divider__text">${esc(text)}</span>` +
-      `<span class="vml-divider__line"></span>` +
+      `<div class="xvml-divider xvml-divider--text">` +
+      `<span class="xvml-divider__line"></span>` +
+      `<span class="xvml-divider__text">${esc(text)}</span>` +
+      `<span class="xvml-divider__line"></span>` +
       `</div>`
     );
   }
   const mod = findKw(node.args, ['dashed', 'thick', 'spacious']);
-  return `<hr class="${cls('vml-divider', mod && `vml-divider--${mod}`)}" />`;
+  return `<hr class="${cls('xvml-divider', mod && `xvml-divider--${mod}`)}" />`;
 }
 
-function renderBadge(node: VmlNode): string {
+function renderBadge(node: XvmlNode): string {
   const label = firstStr(node.args);
   const variant = findKw(node.args, ['neutral', 'success', 'warning', 'error', 'info']) ?? 'neutral';
-  return `<span class="vml-badge vml-badge--${variant}">${esc(label)}</span>`;
+  return `<span class="xvml-badge xvml-badge--${variant}">${esc(label)}</span>`;
 }
 
 // ── Form ──────────────────────────────────────────────────────────────────────
@@ -224,7 +224,7 @@ const HTML_INPUT_TYPES = new Set([
   'email', 'password', 'number', 'tel', 'url', 'date', 'textarea', 'search', 'time', 'text',
 ]);
 
-function renderField(node: VmlNode, state: RenderState): string {
+function renderField(node: XvmlNode, state: RenderState): string {
   const label = firstStr(node.args);
 
   // Find type keyword (first keyword that isn't a modifier)
@@ -252,38 +252,38 @@ function renderField(node: VmlNode, state: RenderState): string {
   const valAttr = defaultValue ? ` value="${esc(defaultValue)}"` : '';
 
   const input = actualType === 'textarea'
-    ? `<textarea id="${id}" class="vml-field__textarea"${reqAttr}${disAttr}${phAttr}>${esc(defaultValue)}</textarea>`
-    : `<input id="${id}" class="vml-field__input" type="${actualType}"${reqAttr}${disAttr}${phAttr}${valAttr} />`;
+    ? `<textarea id="${id}" class="xvml-field__textarea"${reqAttr}${disAttr}${phAttr}>${esc(defaultValue)}</textarea>`
+    : `<input id="${id}" class="xvml-field__input" type="${actualType}"${reqAttr}${disAttr}${phAttr}${valAttr} />`;
 
-  return `<div class="vml-field"><label class="vml-field__label" for="${id}">${esc(label)}</label>${input}</div>`;
+  return `<div class="xvml-field"><label class="xvml-field__label" for="${id}">${esc(label)}</label>${input}</div>`;
 }
 
-function renderButton(node: VmlNode): string {
+function renderButton(node: XvmlNode): string {
   const label = firstStr(node.args);
   const variant = findKw(node.args, ['default', 'primary', 'secondary', 'danger', 'ghost', 'link']) ?? 'default';
   const size = findKw(node.args, ['sm', 'md', 'lg']) ?? 'md';
   const full = hasKw(node.args, 'full');
   const disabled = hasKw(node.args, 'disabled');
   return (
-    `<button class="${cls('vml-button', `vml-button--${variant}`, size !== 'md' && `vml-button--${size}`, full && 'vml-button--full')}" ` +
+    `<button class="${cls('xvml-button', `xvml-button--${variant}`, size !== 'md' && `xvml-button--${size}`, full && 'xvml-button--full')}" ` +
     `type="button"${disabled ? ' disabled' : ''}>${esc(label)}</button>`
   );
 }
 
-function renderCheckbox(node: VmlNode, state: RenderState): string {
+function renderCheckbox(node: XvmlNode, state: RenderState): string {
   const label = firstStr(node.args);
   const checked = hasKw(node.args, 'checked');
   const disabled = hasKw(node.args, 'disabled');
   const id = nextId(state, 'checkbox');
   return (
-    `<label class="vml-checkbox" for="${id}">` +
-    `<input id="${id}" class="vml-checkbox__input" type="checkbox"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''} />` +
-    `<span class="vml-checkbox__label">${esc(label)}</span>` +
+    `<label class="xvml-checkbox" for="${id}">` +
+    `<input id="${id}" class="xvml-checkbox__input" type="checkbox"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''} />` +
+    `<span class="xvml-checkbox__label">${esc(label)}</span>` +
     `</label>`
   );
 }
 
-function renderSelect(node: VmlNode, state: RenderState): string {
+function renderSelect(node: XvmlNode, state: RenderState): string {
   const label = nthStr(node.args, 0);
   const required = hasKw(node.args, 'required');
   const id = nextId(state, 'select');
@@ -300,84 +300,84 @@ function renderSelect(node: VmlNode, state: RenderState): string {
     .join('');
 
   return (
-    `<div class="vml-select">` +
-    `<label class="vml-select__label" for="${id}">${esc(label)}</label>` +
-    `<select id="${id}" class="vml-select__input"${required ? ' required' : ''}>${optionsHtml}</select>` +
+    `<div class="xvml-select">` +
+    `<label class="xvml-select__label" for="${id}">${esc(label)}</label>` +
+    `<select id="${id}" class="xvml-select__input"${required ? ' required' : ''}>${optionsHtml}</select>` +
     `</div>`
   );
 }
 
-function renderLink(node: VmlNode): string {
+function renderLink(node: XvmlNode): string {
   const label = nthStr(node.args, 0);
   const href = nthStr(node.args, 1, '#');
   const blank = hasKw(node.args, 'blank');
-  return `<a class="vml-link" href="${esc(href)}"${blank ? ' target="_blank" rel="noreferrer"' : ''}>${esc(label)}</a>`;
+  return `<a class="xvml-link" href="${esc(href)}"${blank ? ' target="_blank" rel="noreferrer"' : ''}>${esc(label)}</a>`;
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
-function renderTable(node: VmlNode): string {
+function renderTable(node: XvmlNode): string {
   const mod = findKw(node.args, ['striped', 'compact', 'bordered']);
   const rows = node.children.filter(c => c.command === 'row');
   if (rows.length === 0) {
-    return `<div class="vml-table-wrapper"><table class="vml-table"></table></div>`;
+    return `<div class="xvml-table-wrapper"><table class="xvml-table"></table></div>`;
   }
   const [header, ...body] = rows;
   const thead = `<thead><tr>${(header?.args ?? []).map(a => `<th>${esc(String(a.value))}</th>`).join('')}</tr></thead>`;
   const tbody = `<tbody>${body.map(r => `<tr>${r.args.map(a => `<td>${esc(String(a.value))}</td>`).join('')}</tr>`).join('')}</tbody>`;
-  return `<div class="vml-table-wrapper"><table class="${cls('vml-table', mod && `vml-table--${mod}`)}">${thead}${tbody}</table></div>`;
+  return `<div class="xvml-table-wrapper"><table class="${cls('xvml-table', mod && `xvml-table--${mod}`)}">${thead}${tbody}</table></div>`;
 }
 
 // Syntax: @stat "Value" "Label" [trend-kw]
 // Value is displayed large; Label is the descriptor below it.
-function renderStat(node: VmlNode): string {
+function renderStat(node: XvmlNode): string {
   const value = nthStr(node.args, 0);
   const label = nthStr(node.args, 1);
   const trend = findKw(node.args, ['up', 'down', 'neutral']);
   const trendIcon: Record<string, string> = { up: '↑', down: '↓', neutral: '→' };
   const trendHtml = trend
-    ? `<span class="vml-stat__trend vml-stat__trend--${trend}">${trendIcon[trend]}</span>`
+    ? `<span class="xvml-stat__trend xvml-stat__trend--${trend}">${trendIcon[trend]}</span>`
     : '';
   return (
-    `<div class="vml-stat">` +
-    `<span class="vml-stat__value">${esc(value)}${trendHtml}</span>` +
-    `<span class="vml-stat__label">${esc(label)}</span>` +
+    `<div class="xvml-stat">` +
+    `<span class="xvml-stat__value">${esc(value)}${trendHtml}</span>` +
+    `<span class="xvml-stat__label">${esc(label)}</span>` +
     `</div>`
   );
 }
 
-function renderProgress(node: VmlNode): string {
+function renderProgress(node: XvmlNode): string {
   const label = firstStr(node.args);
   const nums = node.args.filter((a): a is Extract<Arg, { type: 'number' }> => a.type === 'number');
   const value = nums[0]?.value ?? 0;
   const max = nums[1]?.value ?? 100;
   const variant = findKw(node.args, ['default', 'success', 'warning', 'error']);
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  const fillClass = cls('vml-progress__fill', variant && variant !== 'default' && `vml-progress__fill--${variant}`);
+  const fillClass = cls('xvml-progress__fill', variant && variant !== 'default' && `xvml-progress__fill--${variant}`);
   return (
-    `<div class="vml-progress">` +
-    `<div class="vml-progress__header">` +
-    `<span class="vml-progress__label">${esc(label)}</span>` +
-    `<span class="vml-progress__value">${pct}%</span>` +
+    `<div class="xvml-progress">` +
+    `<div class="xvml-progress__header">` +
+    `<span class="xvml-progress__label">${esc(label)}</span>` +
+    `<span class="xvml-progress__value">${pct}%</span>` +
     `</div>` +
-    `<div class="vml-progress__track"><div class="${fillClass}" style="width:${pct}%"></div></div>` +
+    `<div class="xvml-progress__track"><div class="${fillClass}" style="width:${pct}%"></div></div>` +
     `</div>`
   );
 }
 
-function renderList(node: VmlNode): string {
+function renderList(node: XvmlNode): string {
   const mod = findKw(node.args, ['ordered', 'unordered', 'check']) ?? 'unordered';
   const tag = mod === 'ordered' ? 'ol' : 'ul';
   const items = node.children
     .filter(c => c.command === 'item')
-    .map(c => `<li class="vml-list__item">${esc(firstStr(c.args))}</li>`)
+    .map(c => `<li class="xvml-list__item">${esc(firstStr(c.args))}</li>`)
     .join('');
-  return `<${tag} class="vml-list vml-list--${mod}">${items}</${tag}>`;
+  return `<${tag} class="xvml-list xvml-list--${mod}">${items}</${tag}>`;
 }
 
 // ── Code ──────────────────────────────────────────────────────────────────────
 
-function renderCodeblock(node: VmlNode): string {
+function renderCodeblock(node: XvmlNode): string {
   const lang = findKw(node.args, [
     'ts', 'js', 'json', 'bash', 'html', 'css', 'vml', 'sh',
     'py', 'go', 'rust', 'yaml', 'toml', 'sql', 'md', 'text',
@@ -385,28 +385,28 @@ function renderCodeblock(node: VmlNode): string {
   const filename = node.args.find(a => a.type === 'string')?.value ?? '';
   const code = node.rawLines.join('\n');
   const header = lang !== 'text' || filename
-    ? `<div class="vml-codeblock__header">` +
-      `<span class="vml-codeblock__lang">${esc(lang)}</span>` +
-      (filename ? `<span class="vml-codeblock__filename">${esc(filename)}</span>` : '') +
+    ? `<div class="xvml-codeblock__header">` +
+      `<span class="xvml-codeblock__lang">${esc(lang)}</span>` +
+      (filename ? `<span class="xvml-codeblock__filename">${esc(filename)}</span>` : '') +
       `</div>`
     : '';
   return (
-    `<div class="vml-codeblock">${header}` +
-    `<pre class="vml-codeblock__pre">` +
-    `<code class="vml-codeblock__code language-${esc(lang)}">${esc(code)}</code>` +
+    `<div class="xvml-codeblock">${header}` +
+    `<pre class="xvml-codeblock__pre">` +
+    `<code class="xvml-codeblock__code language-${esc(lang)}">${esc(code)}</code>` +
     `</pre></div>`
   );
 }
 
-function renderConstraint(node: VmlNode): string {
+function renderConstraint(node: XvmlNode): string {
   const name = nthStr(node.args, 0);
   const desc = nthStr(node.args, 1);
   const severity = findKw(node.args, ['must', 'should', 'may']) ?? 'must';
   return (
-    `<div class="vml-constraint vml-constraint--${severity}">` +
-    `<span class="vml-constraint__severity">${severity.toUpperCase()}</span>` +
-    `<span class="vml-constraint__name">${esc(name)}</span>` +
-    `<p class="vml-constraint__desc">${esc(desc)}</p>` +
+    `<div class="xvml-constraint xvml-constraint--${severity}">` +
+    `<span class="xvml-constraint__severity">${severity.toUpperCase()}</span>` +
+    `<span class="xvml-constraint__name">${esc(name)}</span>` +
+    `<p class="xvml-constraint__desc">${esc(desc)}</p>` +
     `</div>`
   );
 }
@@ -422,7 +422,7 @@ const ALERT_ICONS: Record<string, string> = {
   info: 'ℹ', success: '✓', warning: '⚠', error: '✕',
 };
 
-function renderAlert(node: VmlNode): string {
+function renderAlert(node: XvmlNode): string {
   const rawVariant = node.args.find(
     a => a.type === 'keyword' && a.value in ALERT_VARIANT_MAP
   )?.value ?? 'info';
@@ -430,9 +430,9 @@ function renderAlert(node: VmlNode): string {
   const message = firstStr(node.args);
   const icon = ALERT_ICONS[variant] ?? 'ℹ';
   return (
-    `<div class="vml-alert vml-alert--${variant}" role="alert">` +
-    `<span class="vml-alert__icon">${icon}</span>` +
-    `<span class="vml-alert__message">${esc(message)}</span>` +
+    `<div class="xvml-alert xvml-alert--${variant}" role="alert">` +
+    `<span class="xvml-alert__icon">${icon}</span>` +
+    `<span class="xvml-alert__message">${esc(message)}</span>` +
     `</div>`
   );
 }

@@ -1,0 +1,101 @@
+@spec 1
+@meta "description" "NOC Incident Dashboard - Open Alerts, Service Health, and Recent Incidents"
+
+@page "NOC Incident Dashboard" dark
+
+@card "Live Alert Summary"
+  @alert warn "3 critical alerts are currently active. Immediate attention required."
+  @stat-row
+    @stat "Critical" "3" up
+    @stat "High" "7" up
+    @stat "Medium" "12" neutral
+    @stat "Low" "5" down
+    @stat "Total Open" "27" up
+  @end
+@end
+
+@card "Service Health"
+  @cols 2
+    @section "Availability"
+      @progress "API Gateway" 99 100 success
+      @progress "Auth Service" 87 100 warning
+      @progress "Database Cluster" 100 100 success
+      @progress "Message Queue" 61 100 error
+      @progress "CDN / Edge Nodes" 95 100 success
+    @end
+    @section "Response Time SLA"
+      @progress "API Gateway (< 200ms)" 92 100 success
+      @progress "Auth Service (< 300ms)" 74 100 warning
+      @progress "Database Cluster (< 50ms)" 88 100 success
+      @progress "Message Queue (< 100ms)" 45 100 error
+      @progress "CDN / Edge Nodes (< 80ms)" 97 100 success
+    @end
+  @end
+@end
+
+@card "On-Call & Escalation Status"
+  @cols 3
+    @section "Primary On-Call"
+      @text "Jordan Lee" bold
+      @text "Pager: Active" muted
+      @badge "Available" success
+    @end
+    @section "Secondary On-Call"
+      @text "Sam Rivera" bold
+      @text "Pager: Standby" muted
+      @badge "Standby" neutral
+    @end
+    @section "Incident Commander"
+      @text "Morgan Chen" bold
+      @text "Engaged on P1" muted
+      @badge "Busy" warning
+    @end
+  @end
+@end
+
+@card "Open Critical & High Alerts"
+  @table striped
+    @row "Alert ID" "Service" "Severity" "Description" "Duration" "Assignee" "Status"
+    @row "ALT-0091" "Message Queue" "Critical" "Queue depth exceeded threshold (>50k msgs)" "1h 42m" "Jordan Lee" "Investigating"
+    @row "ALT-0089" "Auth Service" "Critical" "Elevated 5xx error rate (12.4%)" "2h 05m" "Sam Rivera" "Mitigating"
+    @row "ALT-0087" "API Gateway" "Critical" "Latency spike P99 > 2s on /checkout" "0h 18m" "Unassigned" "New"
+    @row "ALT-0085" "Database Cluster" "High" "Replica lag > 30s on db-replica-03" "3h 11m" "Morgan Chen" "Monitoring"
+    @row "ALT-0083" "CDN / Edge Nodes" "High" "Cache hit ratio dropped below 60%" "0h 54m" "Jordan Lee" "Investigating"
+    @row "ALT-0081" "Auth Service" "High" "Token refresh failures spiking in EU-West" "1h 22m" "Sam Rivera" "Mitigating"
+    @row "ALT-0079" "API Gateway" "High" "SSL certificate expiry in 7 days (prod-lb-02)" "6h 00m" "Unassigned" "New"
+  @end
+@end
+
+@card "Recent Incidents"
+  @table bordered
+    @row "Incident ID" "Title" "Severity" "Started" "Resolved" "Duration" "Root Cause" "Status"
+    @row "INC-2041" "Complete Message Queue Outage" "P1" "2025-07-14 03:12" "2025-07-14 05-48" "2h 36m" "Memory leak in broker process" "Post-Mortem Pending"
+    @row "INC-2040" "Auth Service Degradation" "P2" "2025-07-13 18:45" "2025-07-13 20:10" "1h 25m" "Misconfigured rate limiter after deploy" "Resolved"
+    @row "INC-2039" "API Gateway 503 Errors" "P2" "2025-07-13 09:30" "2025-07-13 10:05" "0h 35m" "Upstream timeout from DB connection pool" "Resolved"
+    @row "INC-2038" "CDN Cache Purge Failure" "P3" "2025-07-12 22:00" "2025-07-12 23:15" "1h 15m" "Stale config pushed to edge nodes" "Resolved"
+    @row "INC-2037" "Database Failover Event" "P1" "2025-07-12 14:20" "2025-07-12 15:02" "0h 42m" "Primary node disk I/O saturation" "Post-Mortem Complete"
+    @row "INC-2036" "Elevated Login Failures" "P3" "2025-07-11 08:55" "2025-07-11 09:30" "0h 35m" "Third-party IdP intermittent outage" "Resolved"
+    @row "INC-2035" "Checkout Latency Spike" "P2" "2025-07-10 16:40" "2025-07-10 17:55" "1h 15m" "Unoptimised query after schema migration" "Resolved"
+  @end
+@end
+
+@card "Incident Trend — Last 7 Days"
+  @stat-row
+    @stat "P1 Incidents" "2" up
+    @stat "P2 Incidents" "3" neutral
+    @stat "P3 Incidents" "2" down
+    @stat "Avg Resolution Time" "1h 18m" down
+    @stat "MTTR (7-day)" "1h 09m" down
+    @stat "SLA Breaches" "1" neutral
+  @end
+@end
+
+@card "Runbook & Escalation Quick Links"
+  @layout inline
+  @link "Message Queue Runbook" "https://wiki.internal/runbooks/mq" blank
+  @link "Auth Service Runbook" "https://wiki.internal/runbooks/auth" blank
+  @link "API Gateway Runbook" "https://wiki.internal/runbooks/apigw" blank
+  @link "Escalation Policy" "https://wiki.internal/escalation" blank
+  @link "PagerDuty Console" "https://app.pagerduty.com" blank
+  @link "Grafana Dashboards" "https://grafana.internal" blank
+@end

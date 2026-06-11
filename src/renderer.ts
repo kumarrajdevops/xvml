@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { parse, ParseError } from './parser.js';
-import type { VmlNode, ThemeBlock } from './parser.js';
+import type { XvmlNode, ThemeBlock } from './parser.js';
 import { renderChildren, createRenderState } from './templates.js';
 import { BASE_CSS } from './styles.js';
 
@@ -31,7 +31,7 @@ function buildThemeStyles(themes: readonly ThemeBlock[]): string {
   return themes
     .map(t => {
       const vars = Object.entries(t.vars)
-        .map(([k, v]) => `  --vml-${k}:${v};`)
+        .map(([k, v]) => `  --xvml-${k}:${v};`)
         .join('\n');
       return `:root {\n${vars}\n}`;
     })
@@ -39,11 +39,11 @@ function buildThemeStyles(themes: readonly ThemeBlock[]): string {
 }
 
 async function resolveImports(
-  nodes: VmlNode[],
+  nodes: XvmlNode[],
   basePath: string,
   chain: Set<string>,
-): Promise<VmlNode[]> {
-  const result: VmlNode[] = [];
+): Promise<XvmlNode[]> {
+  const result: XvmlNode[] = [];
   for (const node of nodes) {
     if (node.command === 'import') {
       const pathArg = node.args[0];
@@ -86,7 +86,7 @@ export async function renderSource(
   const pageTitle = doc.page?.title ?? 'Page';
   // theme: '' means no explicit class → respects prefers-color-scheme via CSS
   const pageTheme = doc.page?.theme ?? '';
-  const themeClass = pageTheme && pageTheme !== 'system' ? ` vml-theme-${esc(pageTheme)}` : '';
+  const themeClass = pageTheme && pageTheme !== 'system' ? ` xvml-theme-${esc(pageTheme)}` : '';
   const dir = flags.has('rtl') ? ' dir="rtl"' : '';
 
   const metaTagsHtml = doc.metaTags
@@ -105,7 +105,7 @@ export async function renderSource(
 ${metaTagsHtml}
 <style>${BASE_CSS}${themeStyles}</style>
 </head>
-<body class="vml-page${themeClass}">
+<body class="xvml-page${themeClass}">
 ${bodyHtml}
 </body>
 </html>`;
@@ -114,15 +114,15 @@ ${bodyHtml}
 }
 
 export async function renderFile(
-  vmlPath: string,
+  xvmlPath: string,
   options?: RenderOptions,
 ): Promise<string> {
-  const source = await fs.readFile(vmlPath, 'utf-8');
-  return renderSource(source, path.resolve(vmlPath), options);
+  const source = await fs.readFile(xvmlPath, 'utf-8');
+  return renderSource(source, path.resolve(xvmlPath), options);
 }
 
 // Output is always docs/<basename>.html — no subdirectory nesting.
 export function outputPath(inputPath: string): string {
-  const name = path.basename(inputPath, '.vml');
+  const name = path.basename(inputPath, '.xvml');
   return path.join('docs', `${name}.html`);
 }

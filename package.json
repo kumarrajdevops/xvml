@@ -1,24 +1,37 @@
 {
-  "name": "@vml/cli",
+  "name": "@xvml/cli",
   "version": "0.1.0",
-  "description": "VML — Visual Markup Language CLI renderer",
+  "description": "XVML — Visual Markup Language CLI renderer",
   "type": "module",
   "bin": {
-    "vml": "./dist/bin/vml.js"
+    "xvml": "./dist/bin/xvml.js"
   },
   "files": [
     "dist",
-    "VML_SPEC.md",
+    "XVML_SPEC.md",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && chmod +x dist/bin/vml.js",
-    "vml": "node --loader ts-node/esm --no-warnings bin/vml.ts",
-    "check": "tsc --noEmit"
+    "build": "tsc && cp XVML_SPEC.md dist/ && chmod +x dist/bin/xvml.js",
+    "xvml": "node --loader ts-node/esm --no-warnings bin/xvml.ts",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
-  "keywords": ["vml", "markdown", "html", "cli", "renderer"],
-  "author": "",
+  "keywords": [
+    "xvml",
+    "markdown",
+    "html",
+    "cli",
+    "renderer"
+  ],
+  "author": "Kumar Raj <kumar.raj@codvo.ai>",
   "license": "ISC",
+  "homepage": "https://github.com/kumarrajdevops/xvml#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kumarrajdevops/xvml"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
@@ -32,6 +45,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.9.2",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.6"
   }
 }

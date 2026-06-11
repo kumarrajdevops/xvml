@@ -1,2 +1,2 @@
-*.vml diff=vml linguist-language=VML
+*.xvml diff=xvml linguist-language=XVML
 docs/*.html -diff

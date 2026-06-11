@@ -6,8 +6,9 @@ import path from 'path';
 import fse from 'fs-extra';
 import { renderFile, outputPath } from './renderer.js';
 import { parse, ParseError } from './parser.js';
+import { askClaude, slugify } from './agent.js';
 
-const VMLRC_DEFAULT = JSON.stringify(
+const XVMLRC_DEFAULT = JSON.stringify(
   { outDir: 'docs', spec: 1 },
   null,
   2,
@@ -22,7 +23,7 @@ async function findVmlFiles(dir: string): Promise<string[]> {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       files.push(...await findVmlFiles(full));
-    } else if (entry.name.endsWith('.vml')) {
+    } else if (entry.name.endsWith('.xvml')) {
       files.push(full);
     }
   }
@@ -57,14 +58,14 @@ export function buildCli(): Command {
   const program = new Command();
 
   program
-    .name('vml')
-    .description('Renders .vml files into deterministic self-contained HTML')
+    .name('xvml')
+    .description('Renders .xvml files into deterministic self-contained HTML')
     .version('1.0.0');
 
-  // vml render <file> [--watch]
+  // xvml render <file> [--watch]
   program
     .command('render <file>')
-    .description('Render a .vml file to docs/<file>.html')
+    .description('Render a .xvml file to docs/<file>.html')
     .option('-w, --watch', 're-render on file change')
     .action(async (file: string, opts: { watch?: boolean }) => {
       try {
@@ -92,10 +93,10 @@ export function buildCli(): Command {
       }
     });
 
-  // vml check <file|glob...>
+  // xvml check <file|glob...>
   program
     .command('check <patterns...>')
-    .description('Check .vml files for spec compliance')
+    .description('Check .xvml files for spec compliance')
     .action(async (patterns: string[]) => {
       let passed = 0;
       let failed = 0;
@@ -106,13 +107,13 @@ export function buildCli(): Command {
           for (const f of files) {
             (await doCheck(f)) ? passed++ : failed++;
           }
-        } else if (pattern.endsWith('.vml')) {
+        } else if (pattern.endsWith('.xvml')) {
           (await doCheck(pattern)) ? passed++ : failed++;
         }
       }
       const total = passed + failed;
       if (total === 0) {
-        console.log(chalk.yellow('No .vml files found.'));
+        console.log(chalk.yellow('No .xvml files found.'));
         return;
       }
       console.log(
@@ -122,15 +123,15 @@ export function buildCli(): Command {
       if (failed > 0) process.exit(1);
     });
 
-  // vml build
+  // xvml build
   program
     .command('build')
-    .description('Render all .vml files in the project to docs/')
+    .description('Render all .xvml files in the project to docs/')
     .action(async () => {
       const cwd = process.cwd();
       const files = await findVmlFiles(cwd);
       if (files.length === 0) {
-        console.log(chalk.yellow('No .vml files found.'));
+        console.log(chalk.yellow('No .xvml files found.'));
         return;
       }
       let ok = 0;
@@ -152,19 +153,81 @@ export function buildCli(): Command {
       if (fail > 0) process.exit(1);
     });
 
-  // vml init
+  // xvml ask "task description" [--out filename] [--model model-id]
+  program
+    .command('ask <task>')
+    .description('Ask Claude to generate a XVML page, then render it')
+    .option('-o, --out <filename>', 'output filename without extension (default: slugified task)')
+    .option('-m, --model <model>', 'Claude model ID', 'claude-sonnet-4-6')
+    .option('--print', 'print generated XVML to stdout without saving or rendering')
+    .action(async (task: string, opts: { out?: string; model: string; print?: boolean }) => {
+      const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+      let spinIdx = 0;
+      const spinInterval = setInterval(() => {
+        process.stdout.write(`\r${chalk.cyan(spinner[spinIdx++ % spinner.length])} Asking Claude…`);
+      }, 80);
+
+      let xvml: string;
+      try {
+        xvml = await askClaude(task, { model: opts.model });
+      } catch (err: unknown) {
+        clearInterval(spinInterval);
+        process.stdout.write('\r');
+        const msg =
+          err instanceof Error
+            ? err.message
+            : typeof err === 'object' && err !== null && 'message' in err
+              ? String((err as Record<string, unknown>)['message'])
+              : String(err);
+        console.error(`${chalk.red('Error:')} ${msg}`);
+        process.exit(1);
+      }
+      clearInterval(spinInterval);
+      process.stdout.write('\r');
+
+      if (opts.print) {
+        console.log(xvml);
+        return;
+      }
+
+      // Validate before writing — fail fast with a clear parse error.
+      try {
+        parse(xvml);
+      } catch (err) {
+        const msg = err instanceof ParseError ? err.message : String(err);
+        console.error(`${chalk.red('Parse error in generated XVML:')} ${msg}`);
+        console.error(chalk.dim('Generated XVML:\n') + chalk.dim(xvml));
+        process.exit(1);
+      }
+
+      const slug = opts.out ?? slugify(task);
+      const xvmlPath = path.join('examples', `${slug}.xvml`);
+
+      await fse.outputFile(xvmlPath, xvml, 'utf-8');
+      console.log(`${chalk.green('✓')} ${chalk.dim('saved')} ${chalk.cyan(xvmlPath)}`);
+
+      try {
+        await doRender(xvmlPath);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`${chalk.red('Render error:')} ${msg}`);
+        process.exit(1);
+      }
+    });
+
+  // xvml init
   program
     .command('init')
-    .description('Create CLAUDE.md and .vmlrc in the current directory')
+    .description('Create CLAUDE.md and .xvmlrc in the current directory')
     .action(async () => {
       const cwd = process.cwd();
 
-      const vmlrcPath = path.join(cwd, '.vmlrc');
-      if (await fse.pathExists(vmlrcPath)) {
-        console.log(chalk.yellow('.vmlrc already exists — skipping'));
+      const xvmlrcPath = path.join(cwd, '.xvmlrc');
+      if (await fse.pathExists(xvmlrcPath)) {
+        console.log(chalk.yellow('.xvmlrc already exists — skipping'));
       } else {
-        await fs.writeFile(vmlrcPath, VMLRC_DEFAULT, 'utf-8');
-        console.log(`${chalk.green('✓')} Created ${chalk.cyan('.vmlrc')}`);
+        await fs.writeFile(xvmlrcPath, XVMLRC_DEFAULT, 'utf-8');
+        console.log(`${chalk.green('✓')} Created ${chalk.cyan('.xvmlrc')}`);
       }
 
       const claudePath = path.join(cwd, 'CLAUDE.md');
@@ -172,15 +235,15 @@ export function buildCli(): Command {
         console.log(chalk.yellow('CLAUDE.md already exists — skipping'));
       } else {
         const content = [
-          '# vml-agent',
+          '# xvml',
           '',
-          '- All UI pages must be written as `.vml` files, never raw `.html`',
-          '- After creating any `.vml` file, always run: `vml render <file>`',
+          '- All UI pages must be written as `.xvml` files, never raw `.html`',
+          '- After creating any `.xvml` file, always run: `xvml render <file>`',
           '- Output rendered files go to `/docs` folder',
           '- TypeScript only, strict mode, no `any` types',
           '- No external CDN in rendered HTML output',
           '- Rendered HTML must be fully self-contained (CSS + JS inline)',
-          '- Deterministic rendering — same `.vml` input always produces identical HTML',
+          '- Deterministic rendering — same `.xvml` input always produces identical HTML',
           '- Temperature `0` on all Claude API calls',
         ].join('\n');
         await fs.writeFile(claudePath, content, 'utf-8');
@@ -192,5 +255,14 @@ export function buildCli(): Command {
 }
 
 export function runCli(): void {
-  buildCli().parse(process.argv);
+  buildCli().parseAsync(process.argv).catch((err: unknown) => {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : typeof err === 'object' && err !== null && 'message' in err
+          ? String((err as Record<string, unknown>)['message'])
+          : String(err);
+    console.error(`${chalk.red('Error:')} ${msg}`);
+    process.exit(1);
+  });
 }

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NOC Incident Dashboard</title>
+<meta name="description" content="NOC Incident Dashboard - Open Alerts, Service Health, and Recent Incidents" />
+<style>*,*::before,*::after{box-sizing:border-box}
+body{margin:0}
+
+/* ── Custom properties (light defaults) ── */
+:root{
+  --xvml-color-primary:#6366f1;
+  --xvml-color-primary-hover:#4f46e5;
+  --xvml-color-bg:#f1f5f9;
+  --xvml-color-surface:#ffffff;
+  --xvml-color-border:#e2e8f0;
+  --xvml-color-text:#0f172a;
+  --xvml-color-text-muted:#64748b;
+  --xvml-color-text-label:#374151;
+  --xvml-color-success:#22c55e;
+  --xvml-color-success-bg:#dcfce7;
+  --xvml-color-success-text:#166534;
+  --xvml-color-warning:#f59e0b;
+  --xvml-color-warning-bg:#fef9c3;
+  --xvml-color-warning-text:#854d0e;
+  --xvml-color-error:#ef4444;
+  --xvml-color-error-bg:#fee2e2;
+  --xvml-color-error-text:#991b1b;
+  --xvml-color-info-bg:#dbeafe;
+  --xvml-color-info-text:#1e40af;
+  --xvml-font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --xvml-mono:'Courier New',Courier,monospace;
+  --xvml-radius:10px;
+  --xvml-radius-sm:6px;
+  --xvml-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+
+/* ── Auto dark mode (no explicit theme class) ── */
+@media(prefers-color-scheme:dark){
+  :root{
+    --xvml-color-bg:#0f172a;
+    --xvml-color-surface:#1e293b;
+    --xvml-color-border:#334155;
+    --xvml-color-text:#f1f5f9;
+    --xvml-color-text-muted:#94a3b8;
+    --xvml-color-text-label:#cbd5e1;
+    --xvml-shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+}
+
+/* ── Explicit theme overrides (beat the media query via inheritance) ── */
+.xvml-theme-light{
+  --xvml-color-bg:#f1f5f9;
+  --xvml-color-surface:#ffffff;
+  --xvml-color-border:#e2e8f0;
+  --xvml-color-text:#0f172a;
+  --xvml-color-text-muted:#64748b;
+  --xvml-color-text-label:#374151;
+  --xvml-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+.xvml-theme-dark{
+  --xvml-color-bg:#0f172a;
+  --xvml-color-surface:#1e293b;
+  --xvml-color-border:#334155;
+  --xvml-color-text:#f1f5f9;
+  --xvml-color-text-muted:#94a3b8;
+  --xvml-color-text-label:#cbd5e1;
+  --xvml-shadow:0 1px 3px rgba(0,0,0,.3);
+}
+
+/* ── Page shell ── */
+.xvml-page{
+  min-height:100vh;
+  padding:24px 20px;
+  max-width:960px;
+  margin:0 auto;
+  background:var(--xvml-color-bg);
+  color:var(--xvml-color-text);
+  font-family:var(--xvml-font);
+  font-size:16px;
+  line-height:1.5;
+}
+
+/* ── Navigation ── */
+.xvml-nav{
+  background:var(--xvml-color-surface);
+  border-radius:var(--xvml-radius);
+  border:1px solid var(--xvml-color-border);
+  padding:0 20px;
+  margin-bottom:20px;
+  box-shadow:var(--xvml-shadow);
+}
+.xvml-nav__links{
+  display:flex;
+  list-style:none;
+  padding:0;
+  margin:0;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.xvml-nav__link{
+  display:block;
+  padding:14px 10px;
+  color:var(--xvml-color-text-muted);
+  text-decoration:none;
+  font-size:14px;
+  font-weight:500;
+  border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;
+}
+.xvml-nav__link:first-child{color:var(--xvml-color-primary);border-bottom-color:var(--xvml-color-primary)}
+.xvml-nav__link:hover{color:var(--xvml-color-text);border-bottom-color:var(--xvml-color-border)}
+
+/* ── Card ── */
+.xvml-card{
+  background:var(--xvml-color-surface);
+  border-radius:var(--xvml-radius);
+  box-shadow:var(--xvml-shadow);
+  border:1px solid var(--xvml-color-border);
+  padding:24px;
+  margin-bottom:20px;
+}
+.xvml-card--flat{box-shadow:none}
+.xvml-card--outlined{box-shadow:none}
+.xvml-card--compact{padding:16px}
+.xvml-card__label{font-size:16px;font-weight:600;margin:0 0 20px;color:var(--xvml-color-text)}
+.xvml-card__body{}
+
+/* ── Section ── */
+.xvml-section{margin-bottom:16px}
+.xvml-section--divided{border-top:1px solid var(--xvml-color-border);padding-top:16px}
+.xvml-section__label{
+  font-size:11px;font-weight:700;color:var(--xvml-color-text-muted);
+  text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px
+}
+.xvml-section__body{}
+
+/* ── Layout ── */
+.xvml-layout{display:block}
+.xvml-layout--inline{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.xvml-layout--grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.xvml-layout--center{display:flex;justify-content:center;align-items:center}
+.xvml-layout--fill{display:flex;flex-direction:column;flex:1}
+
+/* ── Cols ── */
+.xvml-cols{display:grid;gap:16px}
+.xvml-cols--1{grid-template-columns:1fr}
+.xvml-cols--2{grid-template-columns:repeat(2,1fr)}
+.xvml-cols--3{grid-template-columns:repeat(3,1fr)}
+.xvml-cols--4{grid-template-columns:repeat(4,1fr)}
+.xvml-cols--5{grid-template-columns:repeat(5,1fr)}
+.xvml-cols--6{grid-template-columns:repeat(6,1fr)}
+.xvml-col{}
+
+/* ── Avatar ── */
+.xvml-avatar{
+  width:60px;height:60px;border-radius:50%;
+  background:var(--xvml-color-primary);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:700;margin-bottom:16px;
+  letter-spacing:-0.5px;user-select:none;flex-shrink:0;
+}
+
+/* ── Title ── */
+.xvml-title{margin:0 0 6px;font-weight:700;line-height:1.2;color:var(--xvml-color-text)}
+.xvml-title--xl{font-size:32px}
+.xvml-title--lg{font-size:24px}
+.xvml-title--md{font-size:20px}
+.xvml-title--sm{font-size:16px}
+
+/* ── Subtitle ── */
+.xvml-subtitle{margin:0 0 20px;font-size:15px;color:var(--xvml-color-text-muted)}
+.xvml-subtitle--muted{opacity:.75}
+
+/* ── Text ── */
+.xvml-text{margin:0 0 12px;line-height:1.65;color:var(--xvml-color-text)}
+.xvml-text--sm{font-size:13px}
+.xvml-text--muted{color:var(--xvml-color-text-muted)}
+.xvml-text--bold{font-weight:600}
+.xvml-text--mono{font-family:var(--xvml-mono)}
+.xvml-text--error{color:var(--xvml-color-error)}
+.xvml-text--success{color:var(--xvml-color-success)}
+
+/* ── Divider ── */
+.xvml-divider{border:none;border-top:1px solid var(--xvml-color-border);margin:20px 0}
+.xvml-divider--dashed{border-top-style:dashed}
+.xvml-divider--thick{border-top-width:2px}
+.xvml-divider--spacious{margin:32px 0}
+.xvml-divider--text{
+  display:flex;align-items:center;gap:12px;
+  margin:20px 0;color:var(--xvml-color-text-muted);font-size:13px;
+  border:none;
+}
+.xvml-divider__line{flex:1;height:1px;background:var(--xvml-color-border)}
+.xvml-divider__text{white-space:nowrap}
+
+/* ── Badge ── */
+.xvml-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500}
+.xvml-badge--neutral{background:var(--xvml-color-border);color:var(--xvml-color-text-label)}
+.xvml-badge--success{background:var(--xvml-color-success-bg);color:var(--xvml-color-success-text)}
+.xvml-badge--warning{background:var(--xvml-color-warning-bg);color:var(--xvml-color-warning-text)}
+.xvml-badge--error{background:var(--xvml-color-error-bg);color:var(--xvml-color-error-text)}
+.xvml-badge--info{background:var(--xvml-color-info-bg);color:var(--xvml-color-info-text)}
+
+/* ── Field ── */
+.xvml-field{margin-bottom:16px}
+.xvml-field__label{
+  display:block;font-size:13px;font-weight:500;
+  margin-bottom:5px;color:var(--xvml-color-text-label)
+}
+.xvml-field__input,.xvml-field__textarea{
+  display:block;width:100%;padding:9px 12px;
+  border:1px solid var(--xvml-color-border);border-radius:var(--xvml-radius-sm);
+  font-size:14px;color:var(--xvml-color-text);background:var(--xvml-color-surface);
+  font-family:var(--xvml-font);transition:border-color .15s,box-shadow .15s;
+}
+.xvml-field__input:focus,.xvml-field__textarea:focus{
+  outline:none;border-color:var(--xvml-color-primary);
+  box-shadow:0 0 0 3px rgba(99,102,241,.15);
+}
+.xvml-field__textarea{min-height:80px;resize:vertical}
+
+/* ── Button ── */
+.xvml-button{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:9px 18px;border:1px solid transparent;
+  border-radius:var(--xvml-radius-sm);font-size:14px;font-weight:500;
+  cursor:pointer;font-family:var(--xvml-font);transition:opacity .15s,background .15s;
+  text-decoration:none;
+}
+.xvml-button--default{background:var(--xvml-color-surface);border-color:var(--xvml-color-border);color:var(--xvml-color-text-label)}
+.xvml-button--primary{background:var(--xvml-color-primary);color:#fff;border-color:var(--xvml-color-primary)}
+.xvml-button--primary:hover{background:var(--xvml-color-primary-hover)}
+.xvml-button--secondary{background:var(--xvml-color-surface);border-color:var(--xvml-color-border);color:var(--xvml-color-text)}
+.xvml-button--danger{background:var(--xvml-color-error);color:#fff;border-color:var(--xvml-color-error)}
+.xvml-button--ghost{background:transparent;color:var(--xvml-color-primary);border-color:transparent}
+.xvml-button--link{background:transparent;border-color:transparent;color:var(--xvml-color-primary);text-decoration:underline;padding:0}
+.xvml-button--sm{padding:5px 12px;font-size:12px}
+.xvml-button--lg{padding:12px 24px;font-size:16px}
+.xvml-button--full{width:100%}
+.xvml-button:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Checkbox ── */
+.xvml-checkbox{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--xvml-color-text)}
+.xvml-checkbox__input{width:16px;height:16px;accent-color:var(--xvml-color-primary)}
+
+/* ── Select ── */
+.xvml-select{margin-bottom:16px}
+.xvml-select__label{display:block;font-size:13px;font-weight:500;margin-bottom:5px;color:var(--xvml-color-text-label)}
+.xvml-select__input{
+  display:block;width:100%;padding:9px 12px;
+  border:1px solid var(--xvml-color-border);border-radius:var(--xvml-radius-sm);
+  font-size:14px;color:var(--xvml-color-text);background:var(--xvml-color-surface);
+  font-family:var(--xvml-font);
+}
+
+/* ── Link ── */
+.xvml-link{display:inline-block;margin-top:4px;color:var(--xvml-color-primary);text-decoration:none;font-size:14px}
+.xvml-link:hover{text-decoration:underline}
+
+/* ── Stats grid ── */
+.xvml-stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:16px;
+  margin-bottom:20px;
+}
+.xvml-stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+
+/* ── Stat ── */
+.xvml-stat{
+  padding:20px;background:var(--xvml-color-surface);
+  border-radius:var(--xvml-radius);border:1px solid var(--xvml-color-border);
+  box-shadow:var(--xvml-shadow);
+}
+.xvml-stat__value{display:block;font-size:28px;font-weight:700;color:var(--xvml-color-text);line-height:1}
+.xvml-stat__label{
+  display:block;font-size:13px;color:var(--xvml-color-text-muted);
+  margin-top:4px;
+}
+.xvml-stat__trend{font-size:13px;margin-left:4px}
+.xvml-stat__trend--up{color:var(--xvml-color-success)}
+.xvml-stat__trend--down{color:var(--xvml-color-error)}
+.xvml-stat__trend--neutral{color:var(--xvml-color-text-muted)}
+
+/* ── Table ── */
+.xvml-table-wrapper{overflow-x:auto;margin-bottom:16px}
+.xvml-table{width:100%;border-collapse:collapse;font-size:14px}
+.xvml-table th{
+  padding:10px 14px;text-align:left;font-weight:600;font-size:12px;
+  text-transform:uppercase;letter-spacing:.04em;
+  border-bottom:2px solid var(--xvml-color-border);color:var(--xvml-color-text-muted)
+}
+.xvml-table td{padding:12px 14px;border-bottom:1px solid var(--xvml-color-border);color:var(--xvml-color-text)}
+.xvml-table--striped tbody tr:nth-child(even) td{background:var(--xvml-color-bg)}
+.xvml-table--compact th,.xvml-table--compact td{padding:6px 10px}
+.xvml-table--bordered th,.xvml-table--bordered td{border:1px solid var(--xvml-color-border)}
+
+/* ── Progress ── */
+.xvml-progress{margin-bottom:16px}
+.xvml-progress__header{display:flex;justify-content:space-between;margin-bottom:6px}
+.xvml-progress__label{font-size:14px;font-weight:500;color:var(--xvml-color-text)}
+.xvml-progress__value{font-size:13px;color:var(--xvml-color-text-muted)}
+.xvml-progress__track{background:var(--xvml-color-border);border-radius:9999px;height:8px}
+.xvml-progress__fill{height:8px;border-radius:9999px;background:var(--xvml-color-primary)}
+.xvml-progress__fill--success{background:var(--xvml-color-success)}
+.xvml-progress__fill--warning{background:var(--xvml-color-warning)}
+.xvml-progress__fill--error{background:var(--xvml-color-error)}
+
+/* ── List ── */
+.xvml-list{padding-left:20px;margin:0 0 12px}
+.xvml-list--unordered{list-style:disc}
+.xvml-list--ordered{list-style:decimal}
+.xvml-list--check{list-style:none;padding-left:0}
+.xvml-list--check .xvml-list__item::before{content:"✓ ";color:var(--xvml-color-success);font-weight:700}
+.xvml-list__item{padding:3px 0;line-height:1.6}
+
+/* ── Codeblock ── */
+.xvml-codeblock{margin-bottom:16px;border-radius:var(--xvml-radius);overflow:hidden;border:1px solid var(--xvml-color-border)}
+.xvml-codeblock__header{
+  display:flex;align-items:center;gap:8px;padding:8px 14px;
+  background:var(--xvml-color-bg);border-bottom:1px solid var(--xvml-color-border);font-size:12px
+}
+.xvml-codeblock__lang{font-weight:600;color:var(--xvml-color-primary);font-family:var(--xvml-mono)}
+.xvml-codeblock__filename{color:var(--xvml-color-text-muted)}
+.xvml-codeblock__pre{margin:0;padding:16px;background:#1e293b;overflow-x:auto}
+.xvml-codeblock__code{font-family:var(--xvml-mono);font-size:13px;color:#e2e8f0;white-space:pre}
+
+/* ── Constraint ── */
+.xvml-constraint{
+  display:flex;align-items:flex-start;gap:10px;padding:12px 14px;
+  border-radius:var(--xvml-radius-sm);margin-bottom:8px;
+  background:var(--xvml-color-bg);border-left:3px solid var(--xvml-color-primary)
+}
+.xvml-constraint--must{border-left-color:var(--xvml-color-error)}
+.xvml-constraint--should{border-left-color:var(--xvml-color-warning)}
+.xvml-constraint--may{border-left-color:var(--xvml-color-success)}
+.xvml-constraint__severity{
+  font-size:10px;font-weight:800;padding:2px 6px;border-radius:3px;
+  white-space:nowrap;background:var(--xvml-color-error);color:#fff;flex-shrink:0;margin-top:1px;
+}
+.xvml-constraint--should .xvml-constraint__severity{background:var(--xvml-color-warning)}
+.xvml-constraint--may .xvml-constraint__severity{background:var(--xvml-color-success)}
+.xvml-constraint__name{font-weight:600;font-family:var(--xvml-mono);font-size:13px;flex-shrink:0;color:var(--xvml-color-text)}
+.xvml-constraint__desc{margin:0;font-size:14px;color:var(--xvml-color-text-muted);flex:1}
+
+/* ── Alert ── */
+.xvml-alert{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;border-radius:var(--xvml-radius-sm);margin-bottom:12px;
+  border:1px solid transparent;
+}
+.xvml-alert--info{background:var(--xvml-color-info-bg);color:var(--xvml-color-info-text);border-color:rgba(30,64,175,.2)}
+.xvml-alert--success{background:var(--xvml-color-success-bg);color:var(--xvml-color-success-text);border-color:rgba(22,101,52,.2)}
+.xvml-alert--warning{background:var(--xvml-color-warning-bg);color:var(--xvml-color-warning-text);border-color:rgba(133,77,14,.2)}
+.xvml-alert--error{background:var(--xvml-color-error-bg);color:var(--xvml-color-error-text);border-color:rgba(153,27,27,.2)}
+.xvml-alert__icon{font-size:15px;flex-shrink:0;margin-top:1px}
+.xvml-alert__message{font-size:14px;font-weight:500;line-height:1.5}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .xvml-page{padding:16px 12px}
+  .xvml-cols--2,.xvml-cols--3,.xvml-cols--4,.xvml-cols--5,.xvml-cols--6{
+    grid-template-columns:1fr
+  }
+  .xvml-stats{grid-template-columns:repeat(2,1fr)}
+  .xvml-stat-row{grid-template-columns:repeat(2,1fr)}
+  .xvml-stat__value{font-size:22px}
+  .xvml-nav__links{gap:0}
+}</style>
+</head>
+<body class="xvml-page xvml-theme-dark">
+<section class="xvml-card"><h2 class="xvml-card__label">Live Alert Summary</h2><div class="xvml-card__body"><div class="xvml-alert xvml-alert--warning" role="alert"><span class="xvml-alert__icon">⚠</span><span class="xvml-alert__message">3 critical alerts are currently active. Immediate attention required.</span></div><div class="xvml-stat-row"><div class="xvml-stat"><span class="xvml-stat__value">Critical<span class="xvml-stat__trend xvml-stat__trend--up">↑</span></span><span class="xvml-stat__label">3</span></div><div class="xvml-stat"><span class="xvml-stat__value">High<span class="xvml-stat__trend xvml-stat__trend--up">↑</span></span><span class="xvml-stat__label">7</span></div><div class="xvml-stat"><span class="xvml-stat__value">Medium<span class="xvml-stat__trend xvml-stat__trend--neutral">→</span></span><span class="xvml-stat__label">12</span></div><div class="xvml-stat"><span class="xvml-stat__value">Low<span class="xvml-stat__trend xvml-stat__trend--down">↓</span></span><span class="xvml-stat__label">5</span></div><div class="xvml-stat"><span class="xvml-stat__value">Total Open<span class="xvml-stat__trend xvml-stat__trend--up">↑</span></span><span class="xvml-stat__label">27</span></div></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Service Health</h2><div class="xvml-card__body"><div class="xvml-cols xvml-cols--2"><div class="xvml-col"><div class="xvml-section"><h3 class="xvml-section__label">Availability</h3><div class="xvml-section__body"><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">API Gateway</span><span class="xvml-progress__value">99%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:99%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Auth Service</span><span class="xvml-progress__value">87%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--warning" style="width:87%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Database Cluster</span><span class="xvml-progress__value">100%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:100%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Message Queue</span><span class="xvml-progress__value">61%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--error" style="width:61%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">CDN / Edge Nodes</span><span class="xvml-progress__value">95%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:95%"></div></div></div></div></div></div><div class="xvml-col"><div class="xvml-section"><h3 class="xvml-section__label">Response Time SLA</h3><div class="xvml-section__body"><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">API Gateway (&lt; 200ms)</span><span class="xvml-progress__value">92%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:92%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Auth Service (&lt; 300ms)</span><span class="xvml-progress__value">74%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--warning" style="width:74%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Database Cluster (&lt; 50ms)</span><span class="xvml-progress__value">88%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:88%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Message Queue (&lt; 100ms)</span><span class="xvml-progress__value">45%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--error" style="width:45%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">CDN / Edge Nodes (&lt; 80ms)</span><span class="xvml-progress__value">97%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:97%"></div></div></div></div></div></div></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">On-Call &amp; Escalation Status</h2><div class="xvml-card__body"><div class="xvml-cols xvml-cols--3"><div class="xvml-col"><div class="xvml-section"><h3 class="xvml-section__label">Primary On-Call</h3><div class="xvml-section__body"><p class="xvml-text xvml-text--bold">Jordan Lee</p><p class="xvml-text xvml-text--muted">Pager: Active</p><span class="xvml-badge xvml-badge--success">Available</span></div></div></div><div class="xvml-col"><div class="xvml-section"><h3 class="xvml-section__label">Secondary On-Call</h3><div class="xvml-section__body"><p class="xvml-text xvml-text--bold">Sam Rivera</p><p class="xvml-text xvml-text--muted">Pager: Standby</p><span class="xvml-badge xvml-badge--neutral">Standby</span></div></div></div><div class="xvml-col"><div class="xvml-section"><h3 class="xvml-section__label">Incident Commander</h3><div class="xvml-section__body"><p class="xvml-text xvml-text--bold">Morgan Chen</p><p class="xvml-text xvml-text--muted">Engaged on P1</p><span class="xvml-badge xvml-badge--warning">Busy</span></div></div></div></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Open Critical &amp; High Alerts</h2><div class="xvml-card__body"><div class="xvml-table-wrapper"><table class="xvml-table xvml-table--striped"><thead><tr><th>Alert ID</th><th>Service</th><th>Severity</th><th>Description</th><th>Duration</th><th>Assignee</th><th>Status</th></tr></thead><tbody><tr><td>ALT-0091</td><td>Message Queue</td><td>Critical</td><td>Queue depth exceeded threshold (&gt;50k msgs)</td><td>1h 42m</td><td>Jordan Lee</td><td>Investigating</td></tr><tr><td>ALT-0089</td><td>Auth Service</td><td>Critical</td><td>Elevated 5xx error rate (12.4%)</td><td>2h 05m</td><td>Sam Rivera</td><td>Mitigating</td></tr><tr><td>ALT-0087</td><td>API Gateway</td><td>Critical</td><td>Latency spike P99 &gt; 2s on /checkout</td><td>0h 18m</td><td>Unassigned</td><td>New</td></tr><tr><td>ALT-0085</td><td>Database Cluster</td><td>High</td><td>Replica lag &gt; 30s on db-replica-03</td><td>3h 11m</td><td>Morgan Chen</td><td>Monitoring</td></tr><tr><td>ALT-0083</td><td>CDN / Edge Nodes</td><td>High</td><td>Cache hit ratio dropped below 60%</td><td>0h 54m</td><td>Jordan Lee</td><td>Investigating</td></tr><tr><td>ALT-0081</td><td>Auth Service</td><td>High</td><td>Token refresh failures spiking in EU-West</td><td>1h 22m</td><td>Sam Rivera</td><td>Mitigating</td></tr><tr><td>ALT-0079</td><td>API Gateway</td><td>High</td><td>SSL certificate expiry in 7 days (prod-lb-02)</td><td>6h 00m</td><td>Unassigned</td><td>New</td></tr></tbody></table></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Recent Incidents</h2><div class="xvml-card__body"><div class="xvml-table-wrapper"><table class="xvml-table xvml-table--bordered"><thead><tr><th>Incident ID</th><th>Title</th><th>Severity</th><th>Started</th><th>Resolved</th><th>Duration</th><th>Root Cause</th><th>Status</th></tr></thead><tbody><tr><td>INC-2041</td><td>Complete Message Queue Outage</td><td>P1</td><td>2025-07-14 03:12</td><td>2025-07-14 05-48</td><td>2h 36m</td><td>Memory leak in broker process</td><td>Post-Mortem Pending</td></tr><tr><td>INC-2040</td><td>Auth Service Degradation</td><td>P2</td><td>2025-07-13 18:45</td><td>2025-07-13 20:10</td><td>1h 25m</td><td>Misconfigured rate limiter after deploy</td><td>Resolved</td></tr><tr><td>INC-2039</td><td>API Gateway 503 Errors</td><td>P2</td><td>2025-07-13 09:30</td><td>2025-07-13 10:05</td><td>0h 35m</td><td>Upstream timeout from DB connection pool</td><td>Resolved</td></tr><tr><td>INC-2038</td><td>CDN Cache Purge Failure</td><td>P3</td><td>2025-07-12 22:00</td><td>2025-07-12 23:15</td><td>1h 15m</td><td>Stale config pushed to edge nodes</td><td>Resolved</td></tr><tr><td>INC-2037</td><td>Database Failover Event</td><td>P1</td><td>2025-07-12 14:20</td><td>2025-07-12 15:02</td><td>0h 42m</td><td>Primary node disk I/O saturation</td><td>Post-Mortem Complete</td></tr><tr><td>INC-2036</td><td>Elevated Login Failures</td><td>P3</td><td>2025-07-11 08:55</td><td>2025-07-11 09:30</td><td>0h 35m</td><td>Third-party IdP intermittent outage</td><td>Resolved</td></tr><tr><td>INC-2035</td><td>Checkout Latency Spike</td><td>P2</td><td>2025-07-10 16:40</td><td>2025-07-10 17:55</td><td>1h 15m</td><td>Unoptimised query after schema migration</td><td>Resolved</td></tr></tbody></table></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Incident Trend — Last 7 Days</h2><div class="xvml-card__body"><div class="xvml-stat-row"><div class="xvml-stat"><span class="xvml-stat__value">P1 Incidents<span class="xvml-stat__trend xvml-stat__trend--up">↑</span></span><span class="xvml-stat__label">2</span></div><div class="xvml-stat"><span class="xvml-stat__value">P2 Incidents<span class="xvml-stat__trend xvml-stat__trend--neutral">→</span></span><span class="xvml-stat__label">3</span></div><div class="xvml-stat"><span class="xvml-stat__value">P3 Incidents<span class="xvml-stat__trend xvml-stat__trend--down">↓</span></span><span class="xvml-stat__label">2</span></div><div class="xvml-stat"><span class="xvml-stat__value">Avg Resolution Time<span class="xvml-stat__trend xvml-stat__trend--down">↓</span></span><span class="xvml-stat__label">1h 18m</span></div><div class="xvml-stat"><span class="xvml-stat__value">MTTR (7-day)<span class="xvml-stat__trend xvml-stat__trend--down">↓</span></span><span class="xvml-stat__label">1h 09m</span></div><div class="xvml-stat"><span class="xvml-stat__value">SLA Breaches<span class="xvml-stat__trend xvml-stat__trend--neutral">→</span></span><span class="xvml-stat__label">1</span></div></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Runbook &amp; Escalation Quick Links</h2><div class="xvml-card__body"><div class="xvml-layout xvml-layout--inline"><a class="xvml-link" href="https://wiki.internal/runbooks/mq" target="_blank" rel="noreferrer">Message Queue Runbook</a><a class="xvml-link" href="https://wiki.internal/runbooks/auth" target="_blank" rel="noreferrer">Auth Service Runbook</a><a class="xvml-link" href="https://wiki.internal/runbooks/apigw" target="_blank" rel="noreferrer">API Gateway Runbook</a><a class="xvml-link" href="https://wiki.internal/escalation" target="_blank" rel="noreferrer">Escalation Policy</a><a class="xvml-link" href="https://app.pagerduty.com" target="_blank" rel="noreferrer">PagerDuty Console</a><a class="xvml-link" href="https://grafana.internal" target="_blank" rel="noreferrer">Grafana Dashboards</a></div></div></section>
+</body>
+</html>

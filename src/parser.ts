@@ -24,10 +24,10 @@ export interface KeyValueArg {
 }
 export type Arg = StringArg | KeywordArg | NumberArg | KeyValueArg;
 
-export interface VmlNode {
+export interface XvmlNode {
   command: string;
   args: Arg[];
-  children: VmlNode[];
+  children: XvmlNode[];
   rawLines: string[];
 }
 
@@ -43,7 +43,7 @@ export interface ParsedDocument {
   rendererFlags: Set<string>;
   page: { title: string; theme: string } | null;
   themes: ThemeBlock[];
-  body: VmlNode[];
+  body: XvmlNode[];
 }
 
 const BLOCK_COMMANDS = new Set([
@@ -208,7 +208,7 @@ export function parse(source: string): ParsedDocument {
   };
 
   const lines = source.split('\n');
-  const stack: VmlNode[] = [];
+  const stack: XvmlNode[] = [];
   let rawMode = false;
   let themeMode = false;
 
@@ -221,7 +221,8 @@ export function parse(source: string): ParsedDocument {
     if (trimmed.startsWith('@#')) continue;
 
     if (rawMode) {
-      if (trimmed === '@end') {
+      // @@end is the exclusive raw-mode sentinel so literal @end can appear inside codeblocks.
+      if (trimmed === '@@end') {
         rawMode = false;
         stack.pop();
       } else {
@@ -259,7 +260,7 @@ export function parse(source: string): ParsedDocument {
     }
 
     if (RESERVED_COMMANDS.has(cmd)) {
-      throw new ParseError(`@${cmd} is reserved for future VML versions`, lineNum);
+      throw new ParseError(`@${cmd} is reserved for future XVML versions`, lineNum);
     }
 
     if (!KNOWN_COMMANDS.has(cmd)) {
@@ -273,7 +274,7 @@ export function parse(source: string): ParsedDocument {
       continue;
     }
 
-    const node: VmlNode = { command: cmd, args, children: [], rawLines: [] };
+    const node: XvmlNode = { command: cmd, args, children: [], rawLines: [] };
 
     if (stack.length > 0) {
       stack[stack.length - 1].children.push(node);
