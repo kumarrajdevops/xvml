@@ -3,10 +3,14 @@ import chalk from 'chalk';
 import fs from 'fs/promises';
 import { watch as fsWatch } from 'fs';
 import path from 'path';
+import { createRequire } from 'module';
 import fse from 'fs-extra';
 import { renderFile, outputPath } from './renderer.js';
 import { parse, ParseError } from './parser.js';
 import { askClaude, slugify } from './agent.js';
+
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json') as { version: string };
 
 const XVMLRC_DEFAULT = JSON.stringify(
   { outDir: 'docs', spec: 1 },
@@ -60,7 +64,7 @@ export function buildCli(): Command {
   program
     .name('xvml')
     .description('Renders .xvml files into deterministic self-contained HTML')
-    .version('1.0.0');
+    .version(version);
 
   // xvml render <file> [--watch]
   program
