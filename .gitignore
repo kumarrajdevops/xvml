@@ -3,6 +3,8 @@ node_modules/
 
 # Compiled output
 dist/
+packages/*/node_modules/
+packages/*/dist/
 
 # Environment — never commit secrets
 .env

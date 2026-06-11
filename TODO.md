@@ -13,11 +13,13 @@
   - [x] Support glob patterns: `xvml check src/**/*.xvml`
   - [x] Print line numbers with errors
 
-- [ ] **3. Web playground** — paste `.xvml`, see live render, shareable links
-  - [ ] Domain: xvml-lang.dev
-  - [ ] Split-pane editor (source left, HTML preview right)
-  - [ ] Shareable links (encode source in URL or short ID)
-  - [ ] Deploy on Vercel / Cloudflare Pages
+- [x] **3. Web playground** — paste `.xvml`, see live render, shareable links
+  - [ ] Domain: xvml-lang.dev (register separately)
+  - [x] Split-pane editor (source left, HTML preview right)
+  - [x] Shareable links (LZ-string URL compression, no backend)
+  - [x] 5 built-in examples (login, dashboard, profile, settings, minimal)
+  - [x] Open in new tab button
+  - [ ] Deploy on Vercel (run `vercel` in `packages/playground/`)
 
 - [ ] **4. Blog post** — "I was tired of writing plan.md and login.html for the same page"
   - [ ] Publish on Dev.to

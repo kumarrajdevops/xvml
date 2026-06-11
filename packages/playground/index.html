@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XVML Playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --text-muted: #6b7280;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warn: #f59e0b;
+      --header-h: 52px;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; }
+
+    /* ── Header ── */
+    header {
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 10;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+    .logo-badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    button {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 12px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--border); color: var(--text); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-icon { padding: 6px 8px; font-size: 15px; }
+
+    /* ── Layout ── */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: calc(100vh - var(--header-h));
+      margin-top: var(--header-h);
+    }
+
+    /* ── Pane ── */
+    .pane { display: flex; flex-direction: column; overflow: hidden; }
+    .pane + .pane { border-left: 1px solid var(--border); }
+    .pane-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      height: 36px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .pane-header span { display: flex; align-items: center; gap: 6px; }
+    .pane-body { flex: 1; overflow: hidden; position: relative; }
+
+    /* ── CodeMirror overrides ── */
+    .cm-editor { height: 100% !important; font-family: 'JetBrains Mono', monospace !important; font-size: 13px !important; }
+    .cm-scroller { overflow: auto !important; }
+    .cm-editor.cm-focused { outline: none !important; }
+
+    /* ── Preview iframe ── */
+    #preview-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+    }
+
+    /* ── Status bar ── */
+    #statusbar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 11px;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+    .status-dot.error { background: var(--error); }
+    .status-dot.warn { background: var(--warn); }
+    #status-text { color: var(--text-muted); }
+
+    /* ── Share toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 100;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Examples dropdown ── */
+    .examples-wrap { position: relative; }
+    #examples-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px;
+      min-width: 200px;
+      z-index: 20;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    #examples-menu.open { display: block; }
+    .example-item {
+      padding: 7px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .example-item:hover { background: var(--border); }
+    .example-item small { display: block; color: var(--text-muted); font-size: 11px; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span class="logo-badge">XVML</span>
+      Playground
+    </div>
+    <div class="header-actions">
+      <div class="examples-wrap">
+        <button class="btn-ghost" id="examples-btn">Examples ▾</button>
+        <div id="examples-menu"></div>
+      </div>
+      <button class="btn-ghost" id="share-btn">Share</button>
+      <a href="https://github.com/kumarrajdevops/xvml" target="_blank" style="text-decoration:none">
+        <button class="btn-ghost btn-icon" title="GitHub">⭐</button>
+      </a>
+      <a href="https://npmjs.com/package/@xvml/cli" target="_blank" style="text-decoration:none">
+        <button class="btn-ghost" title="npm">npm</button>
+      </a>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <div class="pane" id="editor-pane">
+      <div class="pane-header">
+        <span>📝 source.xvml</span>
+      </div>
+      <div class="pane-body" id="editor-root"></div>
+      <div id="statusbar">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">ready</span>
+      </div>
+    </div>
+
+    <div class="pane" id="preview-pane">
+      <div class="pane-header">
+        <span>🖥 preview</span>
+        <button class="btn-ghost" id="open-btn" style="padding:2px 8px;font-size:11px">open ↗</button>
+      </div>
+      <div class="pane-body">
+        <iframe id="preview-frame" sandbox="allow-scripts"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">🔗 Link copied to clipboard!</div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
