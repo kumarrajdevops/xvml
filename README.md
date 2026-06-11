@@ -86,3 +86,11 @@ styles inlined. Same input always produces byte-identical output.
 
 See [`XVML_SPEC.md`](./XVML_SPEC.md) for the full language reference — every `@command`,
 its arguments, and the HTML it renders to.
+
+---
+
+## Links
+
+- **GitHub:** [github.com/kumarrajdevops/xvml](https://github.com/kumarrajdevops/xvml)
+- **npm:** [@xvml/cli](https://npmjs.com/package/@xvml/cli)
+- **Issues:** [github.com/kumarrajdevops/xvml/issues](https://github.com/kumarrajdevops/xvml/issues)
