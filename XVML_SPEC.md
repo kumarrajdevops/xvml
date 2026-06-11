@@ -1056,16 +1056,70 @@ Passes configuration flags to the renderer. Affects the output HTML but emits no
 
 ---
 
+## Dynamic Commands
+
+When any dynamic command (or an `on:click` attribute) appears in a document, the renderer embeds a small reactive JS runtime (~50 lines, inlined) plus the initial state from `@data`. Pages without dynamic commands stay 100% static — no JS is emitted.
+
+| Command                      | Purpose                                                       |
+|------------------------------|---------------------------------------------------------------|
+| `@data ... @@end`            | Block of raw JSON defining initial state (raw mode, closes with `@@end`) |
+| `@if <key>` … `@end`         | Show children only while `state.key` is truthy                |
+| `@if !<key>` … `@end`        | Show children only while `state.key` is falsy                 |
+| `@if <key>` … `@else` … `@end` | Two branches; exactly one is visible at any time            |
+| `@each <item> in <key>` … `@end` | Repeat children once per element of the state array       |
+| `@bind <key> "Label" [type]` | Input field two-way bound to `state.key`                      |
+| `@var <key>`                 | Render `state.key` as inline text, live-updating              |
+
+State keys support **dot paths** for nested objects everywhere they appear: `@if user.active`, `@var user.role`, `@bind user.name "Name"`.
+
+### `on:click` actions on `@button`
+
+`@button` accepts an `on:click=<action>` key-value argument with three action forms:
+
+| Form                  | Example                                  | Effect                          |
+|-----------------------|------------------------------------------|---------------------------------|
+| `key=value`           | `@button "Save" on:click=saved=true`     | `xvml.set('saved', true)` — `true`/`false`/numbers are parsed, anything else is a string |
+| `toggle:key`          | `@button "Dark" on:click=toggle:dark`    | `xvml.set('dark', !xvml.get('dark'))` |
+| `fn:name`             | `@button "Run" on:click=fn:myHandler`    | Calls `window.myHandler()` if defined |
+
+### Example
+
+```xvml
+@spec 1
+@page "Counter" light
+
+@data
+{ "loggedIn": false, "count": 0, "user": { "active": true } }
+@@end
+
+@card "Session"
+  @if loggedIn
+    @alert success "Welcome back"
+    @button "Sign out" secondary on:click=loggedIn=false
+  @else
+    @button "Sign in" primary on:click=loggedIn=true
+  @end
+@end
+
+@card "Counter"
+  @var count
+  @button "Set to 10" primary on:click=count=10
+@end
+```
+
+### Browser console API
+
+The runtime exposes `window.xvml`: `xvml.state` (current state object), `xvml.get('key')`, `xvml.set('key', value)` (updates and re-renders), `xvml.init(obj)` (merge initial state). `get`/`set` accept dot paths.
+
+---
+
 ## Reserved — Future
 
-The following commands are defined by name only. They **must not** appear in XVML 1.0 files; the renderer will emit an error if encountered. They are reserved for a future reactive/scripting extension.
+The following commands are defined by name only. They **must not** appear in XVML 1.0 files; the renderer will emit an error if encountered. They are reserved for a future extension.
 
 | Command      | Intended purpose                                                    |
 |--------------|---------------------------------------------------------------------|
-| `@if`        | Conditional rendering based on a bound variable                     |
-| `@each`      | Loop over a data array, rendering children once per item            |
-| `@bind`      | Two-way binding between a form field and a named variable           |
-| `@on:click`  | Attach a click handler expression to the nearest element            |
+| `@on:click`  | Standalone click-handler command (the attribute form on `@button` is available now) |
 | `@event`     | Declare a named custom event that the page can emit                 |
 | `@agent`     | Invoke an AI agent inline and render its structured output          |
 

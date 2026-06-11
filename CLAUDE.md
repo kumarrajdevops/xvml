@@ -42,11 +42,14 @@ When using `@if`, `@each`, `@bind`, `@var`, or `@data` — a small reactive JS r
 
 ```
 @data
-{ "name": "Alex", "items": ["a", "b"] }
+{ "name": "Alex", "items": ["a", "b"], "user": { "active": true } }
 @@end
 
 @if loggedIn
   @text "Welcome back"
+  @button "Sign out" on:click=loggedIn=false
+@else
+  @button "Sign in" primary on:click=loggedIn=true
 @end
 
 @each item in items
@@ -55,9 +58,12 @@ When using `@if`, `@each`, `@bind`, `@var`, or `@data` — a small reactive JS r
 
 @bind name "Your name" text
 @var name
+@var user.active
 ```
 
-Control state from browser console: `xvml.set('key', value)` · `xvml.state`
+- State keys support dot paths everywhere: `@if user.active`, `@var user.role`
+- `@button` actions: `on:click=key=value`, `on:click=toggle:key`, `on:click=fn:windowFn`
+- Control state from browser console: `xvml.set('key', value)` · `xvml.get('key')` · `xvml.state`
 
 ## Project Structure
 
@@ -90,4 +96,5 @@ TODO.md         — v1.0.0 roadmap with checklist
 - `@field` type keyword comes before label: `@field email "Email address"`
 - `@select` options are pipe-delimited: `@select "Team" "A | B | C"`
 - `@if !<var>` negates the condition (show when falsy)
+- `@if ... @else ... @end` — two branches, exactly one visible
 - `@each item in collection` — `in` keyword separates item name from collection name

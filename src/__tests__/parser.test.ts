@@ -138,3 +138,17 @@ describe('parse — unknown commands', () => {
     expect(() => parse('@page test\n@card\n  @foobar\n@end')).toThrow(/Unknown command/);
   });
 });
+
+describe('parse — @else', () => {
+  it('accepts @else inside @if as a child marker', () => {
+    const doc = parse('@page test\n@if cond\n  @text "a"\n@else\n  @text "b"\n@end');
+    const ifNode = doc.body[0];
+    expect(ifNode.command).toBe('if');
+    expect(ifNode.children.map(c => c.command)).toEqual(['text', 'else', 'text']);
+  });
+
+  it('rejects @else outside @if', () => {
+    expect(() => parse('@page test\n@else')).toThrow(ParseError);
+    expect(() => parse('@page test\n@card\n@else\n@end')).toThrow(/outside @if/);
+  });
+});

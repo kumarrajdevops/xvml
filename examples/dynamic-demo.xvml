@@ -1,0 +1,69 @@
+@spec 1
+@file "examples/dynamic-demo.xvml"
+@page "Dynamic demo" light
+
+@data
+{
+  "loggedIn": false,
+  "count": 0,
+  "darkMode": false,
+  "name": "Alex",
+  "user": { "role": "admin", "active": true },
+  "tags": ["CLI", "XVML", "AI"]
+}
+@@end
+
+@card "@if / @else"
+  @if loggedIn
+    @alert success "You are logged in"
+    @button "Sign out" secondary on:click=loggedIn=false
+  @else
+    @alert info "You are signed out"
+    @button "Sign in" primary on:click=loggedIn=true
+  @end
+@end
+
+@card "on:click actions"
+  @text "Count:" muted
+  @var count
+  @layout inline
+  @button "Set to 10" primary on:click=count=10
+  @button "Reset" secondary on:click=count=0
+@end
+
+@card "toggle: action"
+  @if darkMode
+    @badge "darkMode: ON" success
+  @else
+    @badge "darkMode: OFF" neutral
+  @end
+  @button "Toggle darkMode" ghost on:click=toggle:darkMode
+@end
+
+@card "Dot-path state"
+  @text "Role:" muted
+  @var user.role
+  @if user.active
+    @badge "Active user" success
+  @else
+    @badge "Inactive" neutral
+  @end
+@end
+
+@card "Two-way binding"
+  @bind name "Your name" text
+  @text "Hello," muted
+  @var name
+@end
+
+@card "Loops"
+  @each tag in tags
+    @badge tag neutral
+  @end
+  @text "Open DevTools console and try:" muted
+  @codeblock js
+xvml.set('tags', ['render', 'is', 'live'])
+xvml.set('tags', [...xvml.get('tags'), 'appended'])
+xvml.set('tags', [])
+  @@end
+@end

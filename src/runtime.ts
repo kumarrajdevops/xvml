@@ -1,19 +1,23 @@
 export const XVML_RUNTIME = `
 (function(){
   var s={};
-  function set(k,v){s[k]=v;_u();}
-  function get(k){return s[k];}
+  function set(k,v){
+    var p=k.split('.'),o=s,i;
+    for(i=0;i<p.length-1;i++){if(typeof o[p[i]]!=='object'||o[p[i]]===null)o[p[i]]={};o=o[p[i]];}
+    o[p[p.length-1]]=v;_u();
+  }
+  function get(k){return _get(s,k);}
   function init(data){Object.assign(s,data);_u();}
   function _u(){
     // @if
     document.querySelectorAll('[data-xi]').forEach(function(el){
       var e=el.dataset.xi,n=e[0]==='!',k=n?e.slice(1):e;
-      el.style.display=(!!s[k])!==n?'':'none';
+      el.style.display=(!!_get(s,k))!==n?'':'none';
     });
     // @bind inputs
     document.querySelectorAll('[data-xb]').forEach(function(el){
-      var k=el.dataset.xb;
-      if(el!==document.activeElement)el.value=s[k]!==undefined?s[k]:'';
+      var v=_get(s,el.dataset.xb);
+      if(el!==document.activeElement)el.value=v!==undefined?v:'';
     });
     // @each
     document.querySelectorAll('[data-xe]').forEach(function(el){
@@ -35,9 +39,10 @@ export const XVML_RUNTIME = `
         c.appendChild(clone);
       });
     });
-    // @var (outside @each)
-    document.querySelectorAll('[data-xv]:not([data-xe] [data-xv])').forEach(function(el){
-      var k=el.dataset.xv;el.textContent=s[k]!==undefined?String(s[k]):'';
+    // @var (outside @each — loop items are resolved by the @each pass above)
+    document.querySelectorAll('[data-xv]').forEach(function(el){
+      if(el.closest('[data-xe]'))return;
+      var v=_get(s,el.dataset.xv);el.textContent=v!==undefined?String(v):'';
     });
   }
   function _get(obj,path){

@@ -286,3 +286,86 @@ describe('renderer — dynamic commands', () => {
     expect(html).not.toContain('data-xi');
   });
 });
+
+describe('renderer — @else and on:click', () => {
+  it('@if/@else renders two branches with negated data-xi', async () => {
+    const src = '@page test\n@if loggedIn\n  @text "Welcome"\n@else\n  @button "Sign in" primary\n@end';
+    const html = await render(src);
+    expect(html).toContain('data-xi="loggedIn"');
+    expect(html).toContain('data-xi="!loggedIn"');
+    expect(html).toContain('Welcome');
+    expect(html).toContain('Sign in');
+  });
+
+  it('@if !cond with @else negates back to bare cond', async () => {
+    const src = '@page test\n@if !loggedIn\n  @text "Guest"\n@else\n  @text "Member"\n@end';
+    const html = await render(src);
+    expect(html).toContain('data-xi="!loggedIn"');
+    expect(html).toContain('data-xi="loggedIn"');
+  });
+
+  it('@else marker does not leak into the if-branch output', async () => {
+    const src = '@page test\n@if a\n  @text "yes"\n@else\n  @text "no"\n@end';
+    const html = await render(src);
+    const ifBranch = html.split('data-xi="!a"')[0];
+    expect(ifBranch).toContain('yes');
+    expect(ifBranch).not.toContain('>no<');
+  });
+
+  it('@if with dot-path condition renders data-xi with the full path', async () => {
+    const html = await render('@page test\n@if user.active\n  @text "Active"\n@end');
+    expect(html).toContain('data-xi="user.active"');
+  });
+
+  it('on:click=key=value renders xvml.set with parsed literal', async () => {
+    const html = await render('@page test\n@button "Inc" primary on:click=count=5');
+    expect(html).toContain('onclick=');
+    expect(html).toContain('count');
+    expect(html).toContain('xvml.init(');
+  });
+
+  it('on:click=key=value with string value quotes it', async () => {
+    const html = await render('@page test\n@button "Set" on:click=name=Alex');
+    expect(html).toMatch(/xvml\.set\(&#39;name&#39;,&#39;Alex&#39;\)|xvml\.set\('name','Alex'\)/);
+  });
+
+  it('on:click=toggle:key renders a toggle handler', async () => {
+    const html = await render('@page test\n@button "Toggle" on:click=toggle:darkMode');
+    expect(html).toContain('!xvml.get(');
+    expect(html).toContain('darkMode');
+  });
+
+  it('on:click=fn:name calls a window function', async () => {
+    const html = await render('@page test\n@button "Run" on:click=fn:myHandler');
+    expect(html).toContain('window.myHandler');
+  });
+
+  it('button without on:click has no onclick attribute and no runtime', async () => {
+    const html = await render('@page test\n@button "Plain" primary');
+    expect(html).not.toContain('onclick=');
+    expect(html).not.toContain('xvml.init(');
+  });
+});
+
+describe('renderer — loop item substitution', () => {
+  it('@badge <item> inside @each renders a data-xv placeholder', async () => {
+    const html = await render('@page test\n@each tag in tags\n  @badge tag neutral\n@end');
+    expect(html).toContain('<span data-xv="tag"></span>');
+  });
+
+  it('@text <item.path> inside @each renders a data-xv placeholder', async () => {
+    const html = await render('@page test\n@each u in users\n  @text u.name\n@end');
+    expect(html).toContain('<span data-xv="u.name"></span>');
+  });
+
+  it('string label still wins over item keyword inside @each', async () => {
+    const html = await render('@page test\n@each tag in tags\n  @badge "literal" tag\n@end');
+    expect(html).toContain('>literal</span>');
+    expect(html).not.toContain('data-xv="tag"></span></span>');
+  });
+
+  it('@badge <item> outside @each renders no placeholder', async () => {
+    const html = await render('@page test\n@badge tag neutral');
+    expect(html).not.toContain('data-xv');
+  });
+});

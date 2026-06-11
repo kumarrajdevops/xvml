@@ -99,11 +99,14 @@ export async function renderSource(
 
   const DYNAMIC_CMDS = new Set(['if', 'each', 'bind', 'var', 'data']);
   function hasDynamic(nodes: XvmlNode[]): boolean {
-    return nodes.some(n => DYNAMIC_CMDS.has(n.command) || hasDynamic(n.children));
+    return nodes.some(n =>
+      DYNAMIC_CMDS.has(n.command) ||
+      n.args.some(a => a.type === 'keyvalue' && a.key === 'on:click') ||
+      hasDynamic(n.children));
   }
   const isDynamic = hasDynamic(body) || Object.keys(doc.initialState).length > 0;
   const runtimeScript = isDynamic
-    ? `<script>${XVML_RUNTIME}\nxvml.init(${JSON.stringify(doc.initialState)});</script>`
+    ? `<script>${XVML_RUNTIME}\nwindow.xvml.init(${JSON.stringify(doc.initialState)});</script>`
     : '';
 
   const html = `<!DOCTYPE html>

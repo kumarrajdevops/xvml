@@ -4,6 +4,8 @@ export interface RenderState {
   readonly idCounter: { n: number };
   readonly noScripts: boolean;
   readonly rtl: boolean;
+  // Item names of the @each blocks currently being rendered (innermost last)
+  readonly eachStack: string[];
 }
 
 export function createRenderState(flags: ReadonlySet<string>): RenderState {
@@ -11,6 +13,7 @@ export function createRenderState(flags: ReadonlySet<string>): RenderState {
     idCounter: { n: 0 },
     noScripts: flags.has('no-scripts'),
     rtl: flags.has('rtl'),
+    eachStack: [],
   };
 }
 
@@ -63,6 +66,27 @@ function findKV(args: readonly Arg[], key: string): string | undefined {
   return args.find((a): a is KeyValueArg => a.type === 'keyvalue' && a.key === key)?.value;
 }
 
+// Inside @each, a bare keyword matching the loop item name (or item.path)
+// becomes a live <span data-xv> placeholder the runtime fills per item.
+function dynVarSpan(args: readonly Arg[], state: RenderState): string | undefined {
+  for (let i = state.eachStack.length - 1; i >= 0; i--) {
+    const item = state.eachStack[i];
+    const kw = args.find((a): a is Extract<Arg, { type: 'keyword' }> =>
+      a.type === 'keyword' && (a.value === item || a.value.startsWith(`${item}.`))
+    );
+    if (kw) return `<span data-xv="${esc(kw.value)}"></span>`;
+  }
+  return undefined;
+}
+
+// Label content for text-bearing commands: literal string arg wins,
+// otherwise a loop-item keyword renders as a dynamic placeholder.
+function labelContent(args: readonly Arg[], state: RenderState): string {
+  const str = firstStr(args);
+  if (str) return esc(str);
+  return dynVarSpan(args, state) ?? '';
+}
+
 // ── Render tree ───────────────────────────────────────────────────────────────
 
 // @layout on a line consumes all subsequent siblings in that block.
@@ -92,11 +116,11 @@ export function renderNode(node: XvmlNode, state: RenderState): string {
     case 'stats':      return renderStats(node, state);
     case 'nav':        return renderNav(node);
     case 'avatar':     return renderAvatar(node);
-    case 'title':      return renderTitle(node);
-    case 'subtitle':   return renderSubtitle(node);
-    case 'text':       return renderText(node);
+    case 'title':      return renderTitle(node, state);
+    case 'subtitle':   return renderSubtitle(node, state);
+    case 'text':       return renderText(node, state);
     case 'divider':    return renderDivider(node);
-    case 'badge':      return renderBadge(node);
+    case 'badge':      return renderBadge(node, state);
     case 'field':      return renderField(node, state);
     case 'button':     return renderButton(node);
     case 'checkbox':   return renderCheckbox(node, state);
@@ -105,7 +129,7 @@ export function renderNode(node: XvmlNode, state: RenderState): string {
     case 'table':      return renderTable(node);
     case 'stat':       return renderStat(node);
     case 'progress':   return renderProgress(node);
-    case 'list':       return renderList(node);
+    case 'list':       return renderList(node, state);
     case 'codeblock':  return renderCodeblock(node);
     case 'constraint': return renderConstraint(node);
     case 'alert':      return renderAlert(node);
@@ -187,22 +211,19 @@ function renderAvatar(node: XvmlNode): string {
 
 // ── Content ───────────────────────────────────────────────────────────────────
 
-function renderTitle(node: XvmlNode): string {
-  const text = firstStr(node.args);
+function renderTitle(node: XvmlNode, state: RenderState): string {
   const size = findKw(node.args, ['xl', 'lg', 'md', 'sm']) ?? 'lg';
-  return `<h1 class="xvml-title xvml-title--${size}">${esc(text)}</h1>`;
+  return `<h1 class="xvml-title xvml-title--${size}">${labelContent(node.args, state)}</h1>`;
 }
 
-function renderSubtitle(node: XvmlNode): string {
-  const text = firstStr(node.args);
+function renderSubtitle(node: XvmlNode, state: RenderState): string {
   const muted = hasKw(node.args, 'muted');
-  return `<p class="${cls('xvml-subtitle', muted && 'xvml-subtitle--muted')}">${esc(text)}</p>`;
+  return `<p class="${cls('xvml-subtitle', muted && 'xvml-subtitle--muted')}">${labelContent(node.args, state)}</p>`;
 }
 
-function renderText(node: XvmlNode): string {
-  const content = firstStr(node.args);
+function renderText(node: XvmlNode, state: RenderState): string {
   const mod = findKw(node.args, ['sm', 'muted', 'bold', 'mono', 'error', 'success']);
-  return `<p class="${cls('xvml-text', mod && `xvml-text--${mod}`)}">${esc(content)}</p>`;
+  return `<p class="${cls('xvml-text', mod && `xvml-text--${mod}`)}">${labelContent(node.args, state)}</p>`;
 }
 
 function renderDivider(node: XvmlNode): string {
@@ -220,10 +241,9 @@ function renderDivider(node: XvmlNode): string {
   return `<hr class="${cls('xvml-divider', mod && `xvml-divider--${mod}`)}" />`;
 }
 
-function renderBadge(node: XvmlNode): string {
-  const label = firstStr(node.args);
+function renderBadge(node: XvmlNode, state: RenderState): string {
   const variant = findKw(node.args, ['neutral', 'success', 'warning', 'error', 'info']) ?? 'neutral';
-  return `<span class="xvml-badge xvml-badge--${variant}">${esc(label)}</span>`;
+  return `<span class="xvml-badge xvml-badge--${variant}">${labelContent(node.args, state)}</span>`;
 }
 
 // ── Form ──────────────────────────────────────────────────────────────────────
@@ -274,10 +294,40 @@ function renderButton(node: XvmlNode): string {
   const size = findKw(node.args, ['sm', 'md', 'lg']) ?? 'md';
   const full = hasKw(node.args, 'full');
   const disabled = hasKw(node.args, 'disabled');
+  const onClickAttr = buttonOnClick(node);
   return (
     `<button class="${cls('xvml-button', `xvml-button--${variant}`, size !== 'md' && `xvml-button--${size}`, full && 'xvml-button--full')}" ` +
-    `type="button"${disabled ? ' disabled' : ''}>${esc(label)}</button>`
+    `type="button"${disabled ? ' disabled' : ''}${onClickAttr}>${esc(label)}</button>`
   );
+}
+
+// @button ... on:click=<action> — three action forms:
+//   key=value        → xvml.set('key', value)   (true/false/number parsed, else string)
+//   toggle:key       → xvml.set('key', !xvml.get('key'))
+//   fn:name          → window.name()
+function buttonOnClick(node: XvmlNode): string {
+  const arg = node.args.find(a => a.type === 'keyvalue' && a.key === 'on:click');
+  if (!arg || arg.type !== 'keyvalue' || !arg.value) return '';
+  const action = arg.value;
+  let js = '';
+  if (action.startsWith('toggle:')) {
+    const key = action.slice(7);
+    js = `xvml.set('${key}',!xvml.get('${key}'))`;
+  } else if (action.startsWith('fn:')) {
+    const fn = action.slice(3);
+    js = `typeof window.${fn}==='function'&&window.${fn}()`;
+  } else if (action.includes('=')) {
+    const eq = action.indexOf('=');
+    const key = action.slice(0, eq);
+    const raw = action.slice(eq + 1);
+    const literal = raw === 'true' || raw === 'false' || (raw !== '' && !isNaN(Number(raw)))
+      ? raw
+      : `'${raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+    js = `xvml.set('${key}',${literal})`;
+  } else {
+    return '';
+  }
+  return ` onclick="${esc(js)}"`;
 }
 
 function renderCheckbox(node: XvmlNode, state: RenderState): string {
@@ -375,12 +425,12 @@ function renderProgress(node: XvmlNode): string {
   );
 }
 
-function renderList(node: XvmlNode): string {
+function renderList(node: XvmlNode, state: RenderState): string {
   const mod = findKw(node.args, ['ordered', 'unordered', 'check']) ?? 'unordered';
   const tag = mod === 'ordered' ? 'ol' : 'ul';
   const items = node.children
     .filter(c => c.command === 'item')
-    .map(c => `<li class="xvml-list__item">${esc(firstStr(c.args))}</li>`)
+    .map(c => `<li class="xvml-list__item">${labelContent(c.args, state)}</li>`)
     .join('');
   return `<${tag} class="xvml-list xvml-list--${mod}">${items}</${tag}>`;
 }
@@ -452,9 +502,17 @@ function renderAlert(node: XvmlNode): string {
 function renderIf(node: XvmlNode, state: RenderState): string {
   const expr = node.args[0]?.type === 'keyword' ? node.args[0].value : '';
   if (!expr) return '';
-  const children = renderChildren(node.children, state);
+  // @else splits the children into two branches; the else branch gets the negated expr
+  const elseIdx = node.children.findIndex(c => c.command === 'else');
+  const ifChildren = elseIdx === -1 ? node.children : node.children.slice(0, elseIdx);
+  const elseChildren = elseIdx === -1 ? [] : node.children.slice(elseIdx + 1);
   // Hidden by default; JS runtime shows/hides based on state
-  return `<div data-xi="${esc(expr)}" style="display:none">${children}</div>`;
+  let html = `<div data-xi="${esc(expr)}" style="display:none">${renderChildren(ifChildren, state)}</div>`;
+  if (elseChildren.length > 0) {
+    const negated = expr.startsWith('!') ? expr.slice(1) : `!${expr}`;
+    html += `<div data-xi="${esc(negated)}" style="display:none">${renderChildren(elseChildren, state)}</div>`;
+  }
+  return html;
 }
 
 function renderEach(node: XvmlNode, state: RenderState): string {
@@ -463,7 +521,9 @@ function renderEach(node: XvmlNode, state: RenderState): string {
   const inIdx = kws.indexOf('in');
   const itemName = inIdx > 0 ? kws[inIdx - 1] : (kws[0] ?? 'item');
   const collection = inIdx >= 0 && kws[inIdx + 1] ? kws[inIdx + 1] : kws[kws.length - 1] ?? '';
+  state.eachStack.push(itemName);
   const children = renderChildren(node.children, state);
+  state.eachStack.pop();
   return (
     `<div data-xe="${esc(collection)}" data-xei="${esc(itemName)}">` +
     `<template>${children}</template>` +

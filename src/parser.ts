@@ -76,7 +76,7 @@ const KNOWN_COMMANDS = new Set([
   // meta
   'spec', 'file', 'meta', 'import', 'theme', 'renderer',
   // dynamic
-  'if', 'each', 'bind', 'var', 'data',
+  'if', 'each', 'bind', 'var', 'data', 'else',
 ]);
 
 // Theme names — keywords that identify themes, not page names
@@ -295,6 +295,11 @@ export function parse(source: string): ParsedDocument {
     }
 
     const args = parseArgs(argStr, lineNum);
+
+    // @else is only valid directly inside an open @if block.
+    if (cmd === 'else' && stack[stack.length - 1]?.command !== 'if') {
+      throw new ParseError('@else outside @if block', lineNum);
+    }
 
     if (DOC_DIRECTIVE_COMMANDS.has(cmd)) {
       handleDocDirective(doc, cmd, args);
