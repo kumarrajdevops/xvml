@@ -1,15 +1,15 @@
 @spec 1
-@file "examples/readme.vml"
-@meta "description" "VML — Visual Markup Language CLI renderer. Official documentation."
+@file "examples/readme.xvml"
+@meta "description" "XVML — eXpressive Visual Markup Language CLI renderer. Official documentation."
 
-@page "@vml/cli"
+@page "@xvml/cli"
 
 @card
   @cols 2
-    @section "What is VML?"
-      @title "Visual Markup Language" lg
+    @section "What is XVML?"
+      @title "eXpressive Visual Markup Language" lg
       @subtitle "Write plain text. Render live UI."
-      @text "VML sits between Markdown and HTML — as readable as Markdown, as structured as HTML. The CLI compiles .vml files into fully self-contained, deterministic HTML." muted
+      @text "XVML sits between Markdown and HTML — as readable as Markdown, as structured as HTML. The CLI compiles .xvml files into fully self-contained, deterministic HTML." muted
       @layout inline
       @badge "v0.1.0" info
       @badge "MIT" neutral
@@ -18,11 +18,11 @@
     @section "Core guarantees"
       @list check
         @item "All CSS inlined — no CDN, no external fonts"
-        @item "Same .vml input always produces byte-identical HTML"
+        @item "Same .xvml input always produces byte-identical HTML"
         @item "Unknown commands cause a render error, never silent fallback"
         @item "Single output file per source file — zero dependencies at runtime"
         @item "Works offline once installed"
-        @item "Claude AI integration via vml ask"
+        @item "Claude AI integration via xvml ask"
       @end
     @end
   @end
@@ -30,65 +30,65 @@
 
 @card "Install"
   @codeblock bash
-npm install -g @vml/cli
+npm install -g @xvml/cli
   @@end
-  @alert success "After install the vml binary is available globally in your PATH."
+  @alert success "After install the xvml binary is available globally in your PATH."
 @end
 
 @card "Quick start"
   @codeblock bash
 # 1. Scaffold config in your project
-vml init
+xvml init
 
 # 2. Render a single file → docs/login.html
-vml render login.vml
+xvml render login.xvml
 
 # 3. Watch mode — re-renders on every save
-vml render login.vml --watch
+xvml render login.xvml --watch
 
-# 4. Render every .vml file in the project at once
-vml build
+# 4. Render every .xvml file in the project at once
+xvml build
 
 # 5. Ask Claude to generate and render a page from a description
 export ANTHROPIC_API_KEY=sk-ant-...
-vml ask "NOC dashboard with alerts and incident table" --out noc
+xvml ask "NOC dashboard with alerts and incident table" --out noc
   @@end
 @end
 
 @card "All commands"
   @table striped
     @row "Command" "What it does" "Output"
-    @row "vml init" "Create CLAUDE.md and .vmlrc in current directory" "CLAUDE.md, .vmlrc"
-    @row "vml render <file.vml>" "Compile one file" "docs/<name>.html"
-    @row "vml render <file.vml> --watch" "Re-render on every save" "docs/<name>.html"
-    @row "vml build" "Render all .vml files in project" "docs/*.html"
-    @row "vml check <file|dir>" "Spec compliance check — exits 1 on errors" "stdout report"
-    @row "vml ask \"<task>\"" "Ask Claude to generate + render a VML page" "examples/<slug>.vml + docs/<slug>.html"
+    @row "xvml init" "Create CLAUDE.md and .xvmlrc in current directory" "CLAUDE.md, .xvmlrc"
+    @row "xvml render <file.xvml>" "Compile one file" "docs/<name>.html"
+    @row "xvml render <file.xvml> --watch" "Re-render on every save" "docs/<name>.html"
+    @row "xvml build" "Render all .xvml files in project" "docs/*.html"
+    @row "xvml check <file|dir>" "Spec compliance check — exits 1 on errors" "stdout report"
+    @row "xvml ask \"<task>\"" "Ask Claude to generate + render an XVML page" "examples/<slug>.xvml + docs/<slug>.html"
   @end
 @end
 
-@card "AI integration — vml ask"
-  @subtitle "Describe a page in plain English. Claude writes the VML. The CLI renders it."
+@card "AI integration — xvml ask"
+  @subtitle "Describe a page in plain English. Claude writes the XVML. The CLI renders it."
   @codeblock bash
 # Set your Anthropic API key
 export ANTHROPIC_API_KEY=sk-ant-...
 
 # Generate and render in one command
-vml ask "login page with email and password"
-vml ask "team settings page with member table and invite form" --out team-settings
-vml ask "billing dashboard with usage stats and invoice history" --out billing
+xvml ask "login page with email and password"
+xvml ask "team settings page with member table and invite form" --out team-settings
+xvml ask "billing dashboard with usage stats and invoice history" --out billing
 
-# Preview the VML without saving or rendering
-vml ask "simple profile card" --print
+# Preview the XVML without saving or rendering
+xvml ask "simple profile card" --print
 
 # Use a specific Claude model
-vml ask "dashboard" --model claude-opus-4-8
+xvml ask "dashboard" --model claude-opus-4-8
   @@end
   @cols 3
     @section "How it works"
       @list ordered
-        @item "VML_SPEC.md sent as system prompt"
-        @item "Claude generates valid VML at temperature 0"
+        @item "XVML_SPEC.md sent as system prompt"
+        @item "Claude generates valid XVML at temperature 0"
         @item "Parser validates before saving"
         @item "Renderer produces self-contained HTML"
       @end
@@ -97,24 +97,24 @@ vml ask "dashboard" --model claude-opus-4-8
       @list unordered
         @item "--out <name>  custom filename slug"
         @item "--model <id>  Claude model to use"
-        @item "--print       show VML, don't save"
+        @item "--print       show XVML, don't save"
       @end
     @end
     @section "Output"
       @list check
-        @item "examples/<slug>.vml saved"
+        @item "examples/<slug>.xvml saved"
         @item "docs/<slug>.html rendered"
-        @item "Parse error shown if VML is invalid"
+        @item "Parse error shown if XVML is invalid"
         @item "No partial writes on failure"
       @end
     @end
   @end
-  @alert info "Temperature 0 means the same task description always generates the same VML."
+  @alert info "Temperature 0 means the same task description always generates the same XVML."
 @end
 
-@card "Example .vml source"
-  @text "A login page — 11 lines of VML, zero HTML." muted
-  @codeblock vml "examples/login.vml"
+@card "Example .xvml source"
+  @text "A login page — 11 lines of XVML, zero HTML." muted
+  @codeblock xvml "examples/login.xvml"
 @page login
 @card
   @title "Welcome again"
@@ -128,12 +128,12 @@ vml ask "dashboard" --model claude-opus-4-8
   @link "Don't have an account? Sign up"
 @end
   @@end
-  @alert info "vml render login.vml produces docs/login.html — one self-contained file, all styles inlined."
+  @alert info "xvml render login.xvml produces docs/login.html — one self-contained file, all styles inlined."
 @end
 
-@card "Why VML?"
+@card "Why XVML?"
   @table bordered
-    @row "Capability" "Markdown" "Raw HTML" "VML"
+    @row "Capability" "Markdown" "Raw HTML" "XVML"
     @row "Human-readable source" "Yes" "No" "Yes"
     @row "Renders interactive UI" "No" "Yes" "Yes"
     @row "No build toolchain needed" "Yes" "Yes" "Yes"
@@ -143,13 +143,13 @@ vml ask "dashboard" --model claude-opus-4-8
     @row "Data components (tables, stats)" "No" "Manual" "Yes"
     @row "Light / dark mode built-in" "No" "Manual" "Yes"
     @row "Mobile responsive by default" "No" "Manual" "Yes"
-    @row "AI page generation (vml ask)" "No" "No" "Yes"
+    @row "AI page generation (xvml ask)" "No" "No" "Yes"
   @end
 @end
 
 @card "Command syntax"
-  @text "Every VML command starts with @ on its own line." muted
-  @codeblock vml
+  @text "Every XVML command starts with @ on its own line." muted
+  @codeblock xvml
 @command "string-arg" keyword-arg key=value
 
 @block-command "optional label" modifier
@@ -183,25 +183,25 @@ vml ask "dashboard" --model claude-opus-4-8
         @item "@meta — HTML meta tag"
         @item "@renderer — output flags"
         @item "@theme — CSS custom props"
-        @item "@import — inline another .vml"
+        @item "@import — inline another .xvml"
       @end
     @end
   @end
 @end
 
 @card "Project rules"
-  @constraint "vml-only" "All UI pages must be written as .vml files — never raw .html" must
-  @constraint "always-render" "After creating any .vml file, always run: vml render <file>" must
+  @constraint "xvml-only" "All UI pages must be written as .xvml files — never raw .html" must
+  @constraint "always-render" "After creating any .xvml file, always run: xvml render <file>" must
   @constraint "docs-output" "Rendered files always go to the /docs folder" must
   @constraint "no-cdn" "No external CDN links in rendered HTML output" must
-  @constraint "deterministic" "Same .vml input must always produce byte-identical HTML output" must
+  @constraint "deterministic" "Same .xvml input must always produce byte-identical HTML output" must
   @constraint "strict-ts" "TypeScript only — strict mode, no any types" must
   @constraint "temp-zero" "Temperature 0 on all Claude API calls" must
-  @constraint "api-key" "ANTHROPIC_API_KEY must be set in environment for vml ask" must
+  @constraint "api-key" "ANTHROPIC_API_KEY must be set in environment for xvml ask" must
 @end
 
 @card "Reserved — future commands"
-  @alert warning "These commands are defined by name only. Using them in VML 1.0 files causes a render error."
+  @alert warning "These commands are defined by name only. Using them in XVML 1.0 files causes a render error."
   @table compact
     @row "Command" "Intended purpose"
     @row "@if" "Conditional rendering based on a bound variable"
@@ -215,7 +215,7 @@ vml ask "dashboard" --model claude-opus-4-8
 
 @card "Links"
   @layout inline
-  @link "VML_SPEC.md — full language reference" "VML_SPEC.md"
-  @link "npm: @vml/cli" "https://npmjs.com/package/@vml/cli" blank
-  @link "GitHub" "https://github.com/kumarrajdevops/vml-agent" blank
+  @link "XVML_SPEC.md — full language reference" "XVML_SPEC.md"
+  @link "npm: @xvml/cli" "https://npmjs.com/package/@xvml/cli" blank
+  @link "GitHub" "https://github.com/kumarrajdevops/xvml" blank
 @end
