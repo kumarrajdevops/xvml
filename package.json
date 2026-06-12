@@ -1,6 +1,6 @@
 {
   "name": "@xvml/cli",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "XVML — Visual Markup Language CLI renderer",
   "type": "module",
   "bin": {
