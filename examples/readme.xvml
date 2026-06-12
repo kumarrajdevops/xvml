@@ -228,8 +228,24 @@ code --install-extension xvml-*.vsix --force
         @item "@renderer — output flags"
         @item "@theme — CSS custom props"
         @item "@import — inline another .xvml"
+        @item "@persist — localStorage state"
       @end
     @end
+  @end
+@end
+
+@card "Multi-page sites"
+  @subtitle "Link pages source-to-source — the renderer converts to output links"
+  @codeblock xvml
+@nav Home=readme.xvml | Projects=dashboard.xvml | Settings=settings.xvml
+
+@link "← Back to docs" "dashboard.xvml"
+  @@end
+  @list check
+    @item "Author links between .xvml source files"
+    @item "Rendered output rewrites local .xvml hrefs to .html automatically"
+    @item "External https:// URLs are never rewritten"
+    @item "In the VS Code preview, links navigate between sources live — render once at the end"
   @end
 @end
 

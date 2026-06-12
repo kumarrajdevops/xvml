@@ -145,6 +145,24 @@ code --install-extension xvml-*.vsix --force
 
 ---
 
+## Multi-page sites
+
+Link pages **source-to-source** — write `.xvml` hrefs, get `.html` links in the output:
+
+```
+@nav Home=readme.xvml | Projects=dashboard.xvml | Settings=settings.xvml
+
+@link "← Back to docs" "dashboard.xvml"
+```
+
+The renderer rewrites local `*.xvml` hrefs to `*.html` at render time
+(`href="dashboard.html"` in the published page); external `https://` URLs pass through
+untouched. In the VS Code preview the links navigate between source files directly —
+so you iterate entirely on `.xvml` files and render once when everything looks right,
+instead of re-rendering on every edit.
+
+---
+
 ## Why XVML?
 
 | | Markdown | HTML | **XVML** |

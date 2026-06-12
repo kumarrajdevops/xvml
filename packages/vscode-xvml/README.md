@@ -6,7 +6,7 @@ Syntax highlighting and live preview for [XVML](https://github.com/kumarrajdevop
 
 - **Syntax highlighting** for all XVML commands, strings, modifiers, `on:` event bindings, `bind:` attribute bindings, and `{path}` interpolation
 - **Live preview panel** — renders the current `.xvml` file to HTML as you type (debounced 400 ms), on save, and whenever the file changes on disk (git, CLI tools, AI agents)
-- **In-preview navigation** — clicking `@nav` / `@link` targets like `settings.html` or `settings.xvml` opens the matching `.xvml` file in the same preview panel; external `https://` links are left alone
+- **In-preview navigation** — clicking `@nav` / `@link` targets opens the matching `.xvml` file in the same preview panel; external `https://` links are left alone. Author links source-to-source (`@nav Home=readme.xvml`) — the renderer rewrites them to `.html` in published output, and the preview resolves either form back to the `.xvml` source
 - **Reactive pages work** — `@if`/`@each`/`@bind`/`on:click` run live inside the preview (scripts are nonce-tagged to satisfy the WebView CSP)
 - **Parse error display** — shows the error message in the preview pane instead of crashing
 
@@ -20,6 +20,7 @@ Syntax highlighting and live preview for [XVML](https://github.com/kumarrajdevop
 
 ```
 @page "Title" light
+@nav Home=readme.xvml | Settings=settings.xvml
 
 @card "Section"
   @text "Hello {name}"
