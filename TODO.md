@@ -48,10 +48,10 @@
   - [x] `@persist <key>` (localStorage) and `@data src=<url>` (remote JSON fetch)
   - [x] 38 new tests (124 total passing)
 
-- [ ] **6. VS Code extension** — syntax highlighting + live preview panel
-  - [ ] TextMate grammar for `.xvml` syntax highlighting
-  - [ ] Live preview panel (WebView) that re-renders on save
-  - [ ] Publish to VS Code Marketplace
+- [x] **6. VS Code extension** — syntax highlighting + live preview panel
+  - [x] TextMate grammar for `.xvml` syntax highlighting
+  - [x] Live preview panel (WebView) that re-renders on save (debounced 400 ms)
+  - [ ] Publish to VS Code Marketplace (run `npm run publish` in `packages/vscode-xvml/`)
 
 - [ ] **7. MCP adapter** — thin wrapper so XVML works as a native Claude CLI tool via MCP
   - [ ] Define MCP tool schema for `render`, `ask`, `check`

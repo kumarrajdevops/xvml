@@ -1,0 +1,123 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "XVML",
+  "scopeName": "source.xvml",
+  "fileTypes": ["xvml"],
+  "patterns": [
+    { "include": "#data-block" },
+    { "include": "#codeblock" },
+    { "include": "#end-marker" },
+    { "include": "#comment" },
+    { "include": "#command-line" }
+  ],
+  "repository": {
+    "data-block": {
+      "comment": "@data ... @@end — raw JSON block",
+      "begin": "^(@data)(?:\\s+|$)",
+      "end": "^(@@end)\\s*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.command.xvml" }
+      },
+      "endCaptures": {
+        "1": { "name": "keyword.control.end.xvml" }
+      },
+      "contentName": "meta.embedded.json.xvml",
+      "patterns": [
+        { "include": "source.json" },
+        { "include": "#keyvalue-inline" },
+        { "include": "#comment" }
+      ]
+    },
+    "codeblock": {
+      "comment": "@codeblock ... @@end — raw code block",
+      "begin": "^(@codeblock)(?:\\s+(.*))?$",
+      "end": "^(@@end)\\s*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.command.xvml" },
+        "2": { "name": "meta.args.xvml", "patterns": [{ "include": "#args" }] }
+      },
+      "endCaptures": {
+        "1": { "name": "keyword.control.end.xvml" }
+      },
+      "contentName": "meta.embedded.block.xvml"
+    },
+    "end-marker": {
+      "comment": "@end closes a block",
+      "match": "^@end\\s*$",
+      "name": "keyword.control.end.xvml"
+    },
+    "comment": {
+      "match": "#.*$",
+      "name": "comment.line.number-sign.xvml"
+    },
+    "command-line": {
+      "comment": "@command args...",
+      "match": "^(@[\\w-]+)((?:\\s+.*)?)$",
+      "captures": {
+        "1": { "name": "keyword.control.command.xvml" },
+        "2": {
+          "name": "meta.args.xvml",
+          "patterns": [{ "include": "#args" }]
+        }
+      }
+    },
+    "args": {
+      "patterns": [
+        { "include": "#string" },
+        { "include": "#keyvalue-action" },
+        { "include": "#operator" },
+        { "include": "#number" },
+        { "include": "#modifier-keyword" },
+        { "include": "#comment" }
+      ]
+    },
+    "string": {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.xvml",
+      "patterns": [
+        {
+          "match": "\\{([\\w.]+)\\}",
+          "name": "meta.interpolation.xvml",
+          "captures": {
+            "1": { "name": "variable.other.xvml" }
+          }
+        },
+        {
+          "match": "\\\\.",
+          "name": "constant.character.escape.xvml"
+        }
+      ]
+    },
+    "keyvalue-action": {
+      "comment": "on:event=action or bind:attr=path key=value pairs",
+      "match": "((?:on|bind):[\\w:]+|[\\w]+)=([^\\s\"#]*)",
+      "captures": {
+        "1": { "name": "entity.other.attribute-name.xvml" },
+        "2": { "name": "string.unquoted.action.xvml" }
+      }
+    },
+    "keyvalue-inline": {
+      "comment": "key=value in @data src= and similar",
+      "match": "(src)=([^\\s\"#]+)",
+      "captures": {
+        "1": { "name": "entity.other.attribute-name.xvml" },
+        "2": { "name": "string.unquoted.xvml" }
+      }
+    },
+    "operator": {
+      "comment": "Comparison operators in @if conditions",
+      "match": "\\b(==|!=|>=|<=|>|<)\\b",
+      "name": "keyword.operator.comparison.xvml"
+    },
+    "number": {
+      "match": "(?<![\\w.#@\"])(-?\\d+(?:\\.\\d+)?)(?![\\w.])",
+      "name": "constant.numeric.xvml"
+    },
+    "modifier-keyword": {
+      "comment": "Known bare-word modifier keywords",
+      "match": "\\b(primary|secondary|ghost|danger|link|default|success|warning|error|info|neutral|muted|bold|mono|sm|md|lg|xl|checked|disabled|required|full|blank|striped|compact|bordered|ordered|unordered|check|flat|outlined|divided|collapsible|inline|stack|up|down|text|email|number|password|tel|url|date|textarea|search|time|light|dark|system|must|should|may|ts|js|json|bash|html|css|xvml|sh|py|go|rust|yaml|toml|sql|md|ok|warn)\\b",
+      "name": "support.constant.modifier.xvml"
+    }
+  }
+}

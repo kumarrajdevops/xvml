@@ -1,0 +1,70 @@
+{
+  "name": "xvml",
+  "displayName": "XVML",
+  "description": "Syntax highlighting and live preview for .xvml files",
+  "version": "0.1.5",
+  "publisher": "kumarrajdevops",
+  "license": "ISC",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": ["xvml", "markup", "preview", "ui"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kumarrajdevops/xvml.git",
+    "directory": "packages/vscode-xvml"
+  },
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "xvml",
+        "aliases": ["XVML", "xvml"],
+        "extensions": [".xvml"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "xvml",
+        "scopeName": "source.xvml",
+        "path": "./syntaxes/xvml.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "xvml.preview",
+        "title": "XVML: Open Preview",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "xvml.preview",
+          "when": "resourceExtname == .xvml",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --platform=node --format=cjs",
+    "watch": "npm run build -- --watch",
+    "package": "npm run build && vsce package --no-dependencies",
+    "publish": "npm run build && vsce publish --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.0.0"
+  }
+}
