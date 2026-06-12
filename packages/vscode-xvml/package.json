@@ -2,7 +2,7 @@
   "name": "xvml",
   "displayName": "XVML",
   "description": "Syntax highlighting and live preview for .xvml files",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "publisher": "kumarrajdevops",
   "license": "ISC",
   "engines": {
