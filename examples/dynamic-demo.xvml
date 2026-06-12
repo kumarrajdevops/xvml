@@ -1,6 +1,7 @@
 @spec 1
 @file "examples/dynamic-demo.xvml"
 @page "Dynamic demo" light
+@persist "xvml-dynamic-demo"
 
 @data
 {
@@ -9,9 +10,18 @@
   "darkMode": false,
   "name": "Alex",
   "user": { "role": "admin", "active": true },
-  "tags": ["CLI", "XVML", "AI"]
+  "tags": ["CLI", "XVML", "AI"],
+  "todos": ["Ship v0.1.5", "Write blog post"],
+  "teams": [
+    { "name": "Core", "members": ["Ann", "Bo"] },
+    { "name": "Ops", "members": ["Cy"] }
+  ],
+  "notify": false,
+  "team": "Alpha"
 }
 @@end
+
+@text "State on this page persists across reloads (@persist). To reset the demo, run localStorage.removeItem('xvml-dynamic-demo') in the DevTools console and refresh." muted
 
 @card "@if / @else"
   @if loggedIn
@@ -23,12 +33,51 @@
   @end
 @end
 
-@card "on:click actions"
-  @text "Count:" muted
-  @var count
+@card "on:click actions + @if comparisons"
+  @text "Count: {count}" muted
+  @if count > 0
+    @badge "count is positive" success
+  @else
+    @badge "count is zero (or less)" neutral
+  @end
   @layout inline
   @button "Set to 10" primary on:click=count=10
   @button "Reset" secondary on:click=count=0
+@end
+
+@card "Per-item actions (@each + edit/remove/push)"
+  @text "A todo list: each row is a loop item. Type in a row to edit that todo in place, Done ✕ deletes it, Add appends one." muted
+  @each todo in todos
+    @layout inline
+    @bind todo "Todo" text
+    @button "Done ✕" sm ghost on:click=remove:todos:{todo__index}
+  @end
+  @button "Add a todo" secondary on:click=push:todos=Task
+@end
+
+@card "Nested @each (loops inside loops)"
+  @text "Outer loop renders each team from state; the inner loop renders that team's own members (team.members is scoped to the current team, not global state)." muted
+  @each team in teams
+    @subtitle team.name
+    @each member in team.members
+      @badge member info
+    @end
+  @end
+@end
+
+@card "More inputs (@bind checkbox/select, on:change)"
+  @bind darkMode "Dark mode" checkbox
+  @bind team "Team" select "Alpha | Beta | Gamma"
+  @text "Team: {team}" muted
+  @checkbox "Email notifications" on:change=notify
+  @if notify
+    @badge "notifications ON" success
+  @end
+@end
+
+@card "Attribute binding"
+  @text "The button below is disabled while signed out:" muted
+  @button "Members only" primary bind:disabled=!loggedIn
 @end
 
 @card "toggle: action"
@@ -40,9 +89,9 @@
   @button "Toggle darkMode" ghost on:click=toggle:darkMode
 @end
 
-@card "Dot-path state"
-  @text "Role:" muted
-  @var user.role
+@card "Dot-path state (nested JSON)"
+  @text "Reads inside the nested user object from @data: user.role prints the role, user.active drives the badge. Try xvml.set('user.active', false) in the console." muted
+  @text "Role: {user.role}"
   @if user.active
     @badge "Active user" success
   @else

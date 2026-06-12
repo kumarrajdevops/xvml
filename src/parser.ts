@@ -45,6 +45,8 @@ export interface ParsedDocument {
   themes: ThemeBlock[];
   body: XvmlNode[];
   initialState: Record<string, unknown>;
+  dataSrc: string | null;
+  persistKey: string | null;
 }
 
 const BLOCK_COMMANDS = new Set([
@@ -53,7 +55,7 @@ const BLOCK_COMMANDS = new Set([
 ]);
 
 const DOC_DIRECTIVE_COMMANDS = new Set([
-  'spec', 'file', 'meta', 'renderer', 'page',
+  'spec', 'file', 'meta', 'renderer', 'page', 'persist',
 ]);
 
 const RESERVED_COMMANDS = new Set([
@@ -76,11 +78,26 @@ const KNOWN_COMMANDS = new Set([
   // meta
   'spec', 'file', 'meta', 'import', 'theme', 'renderer',
   // dynamic
-  'if', 'each', 'bind', 'var', 'data', 'else',
+  'if', 'each', 'bind', 'var', 'data', 'else', 'persist',
 ]);
 
 // Theme names — keywords that identify themes, not page names
 const THEME_KEYWORDS = new Set(['light', 'dark', 'system']);
+
+// @if accepts: key | !key | key OP literal — where OP is == != > < >= <=
+// and literal is a quoted string, number, true/false/null, or bare word.
+const IF_SIMPLE = /^!?[\w.]+$/;
+const IF_COMPARE = /^[\w.]+\s*(==|!=|>=|<=|>|<)\s*("[^"]*"|'[^']*'|-?\d+(\.\d+)?|[\w.-]+)$/;
+
+function validateIfCondition(expr: string, lineNum: number): void {
+  let e = expr.trim();
+  if (e.startsWith('!(') && e.endsWith(')')) e = e.slice(2, -1).trim();
+  if (IF_SIMPLE.test(e) || IF_COMPARE.test(e)) return;
+  throw new ParseError(
+    `Invalid @if condition: "${expr}" — expected <key>, !<key>, or <key> <op> <value> (ops: == != > < >= <=)`,
+    lineNum,
+  );
+}
 
 function parseArgs(argStr: string, lineNum: number): Arg[] {
   const args: Arg[] = [];
@@ -175,6 +192,11 @@ function handleDocDirective(doc: ParsedDocument, cmd: string, args: Arg[]): void
       }
       break;
     }
+    case 'persist': {
+      const a = args[0];
+      if (a?.type === 'string' || a?.type === 'keyword') doc.persistKey = String(a.value);
+      break;
+    }
     case 'page': {
       // First arg may be a quoted title OR a bare page-name keyword.
       // Any light/dark/system keyword is the theme; other keywords become the title.
@@ -210,6 +232,8 @@ export function parse(source: string): ParsedDocument {
     themes: [],
     body: [],
     initialState: {},
+    dataSrc: null,
+    persistKey: null,
   };
 
   const lines = source.split('\n');
@@ -294,11 +318,29 @@ export function parse(source: string): ParsedDocument {
       throw new ParseError(`Unknown command: @${cmd}`, lineNum);
     }
 
-    const args = parseArgs(argStr, lineNum);
+    // @if takes a raw condition expression — parseArgs would mangle the
+    // comparison operators (== >= <=) into key=value pairs.
+    const args = cmd === 'if'
+      ? [{ type: 'keyword', value: argStr } as const]
+      : parseArgs(argStr, lineNum);
+
+    if (cmd === 'if') {
+      if (argStr === '') throw new ParseError('@if requires a condition', lineNum);
+      validateIfCondition(argStr, lineNum);
+    }
 
     // @else is only valid directly inside an open @if block.
     if (cmd === 'else' && stack[stack.length - 1]?.command !== 'if') {
       throw new ParseError('@else outside @if block', lineNum);
+    }
+
+    // @data src="url" loads state at runtime — no JSON block follows.
+    if (cmd === 'data') {
+      const src = args.find(a => a.type === 'keyvalue' && a.key === 'src');
+      if (src && src.type === 'keyvalue') {
+        doc.dataSrc = src.value;
+        continue;
+      }
     }
 
     if (DOC_DIRECTIVE_COMMANDS.has(cmd)) {

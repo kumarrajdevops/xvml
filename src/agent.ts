@@ -38,7 +38,7 @@ Rules you must never break:
 - String arguments use double quotes: "value"
 - Modifier/keyword arguments are bare words: primary, muted, striped
 - Block commands must be closed with @end (or @@end inside @codeblock)
-- Do NOT use @if @each @bind @on:click @event @agent — they are reserved and cause parse errors
+- Use @if, @each, @bind, and on:click= for reactive/dynamic pages; pair them with a @data block for initial state
 - Do NOT emit raw HTML — only XVML commands
 - Always start the file with @page, optionally preceded by @spec and @meta
 - Put content inside @card ... @end blocks

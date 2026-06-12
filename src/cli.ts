@@ -11,7 +11,13 @@ import { parse, ParseError } from './parser.js';
 import { askClaude, slugify } from './agent.js';
 
 const require = createRequire(import.meta.url);
-const { version } = require('../../package.json') as { version: string };
+// dist/src/cli.js → ../../package.json; src/cli.ts via ts-node → ../package.json
+let version: string;
+try {
+  ({ version } = require('../../package.json') as { version: string });
+} catch {
+  ({ version } = require('../package.json') as { version: string });
+}
 
 const XVMLRC_DEFAULT = JSON.stringify(
   { outDir: 'docs', spec: 1 },

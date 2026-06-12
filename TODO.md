@@ -36,6 +36,18 @@
   - [x] Embedded reactive JS runtime (~40 lines) injected only when dynamic commands used
   - [x] Parser + renderer + browser.ts + 7 new tests (63 total passing)
 
+- [x] **5b. Dynamic layer hardening (v0.1.5)**
+  - [x] `@if` comparison expressions (`count > 0`, `role == "admin"`); malformed conditions are parse errors, never silent fallback
+  - [x] Nested `@each` with item-scoped collections (`@each member in team.members`)
+  - [x] `@bind` checkbox / select / number (Number-coerced) types
+  - [x] `on:click` on `@link`, `@card`, `@badge`; `on:change` on `@checkbox`, `@select`
+  - [x] Per-item loop actions: `item__index`, `push:key=value`, `remove:key:index`, typed `{path}` interpolation in handlers
+  - [x] Item-scoped `@bind` — edit array elements in place from inside `@each`
+  - [x] Attribute binding: `bind:<attr>=<path>` on any element (incl. `bind:class`, `bind:disabled`)
+  - [x] String interpolation: `@text "Hello {name}"`
+  - [x] `@persist <key>` (localStorage) and `@data src=<url>` (remote JSON fetch)
+  - [x] 38 new tests (124 total passing)
+
 - [ ] **6. VS Code extension** — syntax highlighting + live preview panel
   - [ ] TextMate grammar for `.xvml` syntax highlighting
   - [ ] Live preview panel (WebView) that re-renders on save

@@ -152,3 +152,43 @@ describe('parse — @else', () => {
     expect(() => parse('@page test\n@card\n@else\n@end')).toThrow(/outside @if/);
   });
 });
+
+describe('parse — @if condition validation', () => {
+  it('accepts bare key, negated key, and dot paths', () => {
+    expect(() => parse('@page test\n@if loggedIn\n  @text "a"\n@end')).not.toThrow();
+    expect(() => parse('@page test\n@if !loggedIn\n  @text "a"\n@end')).not.toThrow();
+    expect(() => parse('@page test\n@if user.active\n  @text "a"\n@end')).not.toThrow();
+  });
+
+  it('accepts comparison expressions', () => {
+    expect(() => parse('@page test\n@if count > 0\n  @text "a"\n@end')).not.toThrow();
+    expect(() => parse('@page test\n@if count >= 10\n  @text "a"\n@end')).not.toThrow();
+    expect(() => parse('@page test\n@if role == "admin"\n  @text "a"\n@end')).not.toThrow();
+    expect(() => parse('@page test\n@if user.role != viewer\n  @text "a"\n@end')).not.toThrow();
+  });
+
+  it('rejects malformed conditions instead of silently falling back', () => {
+    expect(() => parse('@page test\n@if count >> 5\n  @text "a"\n@end')).toThrow(ParseError);
+    expect(() => parse('@page test\n@if count >> 5\n  @text "a"\n@end')).toThrow(/Invalid @if condition/);
+    expect(() => parse('@page test\n@if a && b\n  @text "a"\n@end')).toThrow(ParseError);
+    expect(() => parse('@page test\n@if count > \n  @text "a"\n@end')).toThrow(ParseError);
+  });
+
+  it('stores the full condition as a single raw arg', () => {
+    const doc = parse('@page test\n@if count > 0\n  @text "a"\n@end');
+    expect(doc.body[0].args).toEqual([{ type: 'keyword', value: 'count > 0' }]);
+  });
+});
+
+describe('parse — @persist and @data src', () => {
+  it('reads @persist key into persistKey', () => {
+    const doc = parse('@page test\n@persist "my-app"\n@text "hi"');
+    expect(doc.persistKey).toBe('my-app');
+  });
+
+  it('reads @data src= into dataSrc without opening a block', () => {
+    const doc = parse('@page test\n@data src=/state.json\n@text "hi"');
+    expect(doc.dataSrc).toBe('/state.json');
+    expect(doc.body.map(n => n.command)).toEqual(['text']);
+  });
+});

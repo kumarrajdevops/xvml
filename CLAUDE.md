@@ -38,32 +38,39 @@ xvml ask "Incident dashboard with alerts and incident table" --out incident-dash
 
 ## Dynamic Commands
 
-When using `@if`, `@each`, `@bind`, `@var`, or `@data` — a small reactive JS runtime is embedded in the output automatically.
+When using `@if`, `@each`, `@bind`, `@var`, `@data`, `@persist`, or any `on:`/`bind:` attribute — a small reactive JS runtime is embedded in the output automatically.
 
 ```
 @data
-{ "name": "Alex", "items": ["a", "b"], "user": { "active": true } }
+{ "name": "Alex", "count": 0, "items": ["a", "b"], "user": { "active": true } }
 @@end
+@data src=/state.json        # OR fetch state from a URL at load
+@persist "my-app"            # save state to localStorage under this key
 
-@if loggedIn
-  @text "Welcome back"
-  @button "Sign out" on:click=loggedIn=false
-@else
-  @button "Sign in" primary on:click=loggedIn=true
+@if count > 0
+  @text "You have items"     # conditions: key | !key | key OP literal
+@else                        # ops: == != > < >= <=  (bad syntax = parse error)
+  @text "Empty"
 @end
 
 @each item in items
   @badge item neutral
+  @var item__index                                 # zero-based loop index
+  @bind item "Edit" text                           # edits items.<index> in place
+  @button "✕" on:click=remove:items:{item__index}  # per-item action
 @end
+@button "Add" on:click=push:items=new
 
-@bind name "Your name" text
-@var name
+@bind name "Your name" text        # also: number (coerces), checkbox, select "A | B"
+@text "Hello {name}"               # {path} interpolation in any string arg
 @var user.active
 ```
 
 - State keys support dot paths everywhere: `@if user.active`, `@var user.role`
-- `@button` actions: `on:click=key=value`, `on:click=toggle:key`, `on:click=fn:windowFn`
-- Control state from browser console: `xvml.set('key', value)` · `xvml.get('key')` · `xvml.state`
+- Actions (`on:click` on @button/@link/@card/@badge, `on:change` on @checkbox/@select): `key=value`, `toggle:key`, `fn:windowFn`, `push:key=value`, `remove:key:index`; a bare key on `on:change` writes the control's own value
+- Attribute binding on any element: `bind:disabled=busy`, `bind:class=modeClass` (boolean toggles presence; class appends)
+- Nested `@each` works; inner collections may be item-scoped: `@each member in team.members`
+- Control state from browser console: `xvml.set('key', value)` · `xvml.get('key')` · `xvml.push/removeAt` · `xvml.state`
 
 ## Project Structure
 

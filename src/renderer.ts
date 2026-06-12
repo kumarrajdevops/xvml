@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { parse, ParseError } from './parser.js';
 import type { XvmlNode, ThemeBlock } from './parser.js';
-import { renderChildren, createRenderState } from './templates.js';
+import { renderChildren, createRenderState, treeUsesDynamic } from './templates.js';
 import { BASE_CSS } from './styles.js';
 import { XVML_RUNTIME } from './runtime.js';
 
@@ -18,6 +18,11 @@ function esc(s: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// Prevent </script> in JSON-serialised state from breaking the inline script block.
+function escScript(s: string): string {
+  return s.replace(/<\//g, '<\\/');
 }
 
 function minifyHtml(html: string): string {
@@ -82,7 +87,12 @@ export async function renderSource(
   if (options?.rtl) flags.add('rtl');
 
   const body = await resolveImports(doc.body, sourcePath, new Set([path.resolve(sourcePath)]));
-  const state = createRenderState(flags);
+  const isDynamic =
+    treeUsesDynamic(body) ||
+    Object.keys(doc.initialState).length > 0 ||
+    doc.persistKey !== null ||
+    doc.dataSrc !== null;
+  const state = createRenderState(flags, isDynamic);
 
   const pageTitle = doc.page?.title ?? 'Page';
   // theme: '' means no explicit class → respects prefers-color-scheme via CSS
@@ -97,16 +107,13 @@ export async function renderSource(
   const themeStyles = buildThemeStyles(doc.themes);
   const bodyHtml = renderChildren(body, state);
 
-  const DYNAMIC_CMDS = new Set(['if', 'each', 'bind', 'var', 'data']);
-  function hasDynamic(nodes: XvmlNode[]): boolean {
-    return nodes.some(n =>
-      DYNAMIC_CMDS.has(n.command) ||
-      n.args.some(a => a.type === 'keyvalue' && a.key === 'on:click') ||
-      hasDynamic(n.children));
-  }
-  const isDynamic = hasDynamic(body) || Object.keys(doc.initialState).length > 0;
+  // Boot order matters: init seeds defaults, persist overlays saved state,
+  // load overlays remote state last.
+  const bootLines = [`window.xvml.init(${escScript(JSON.stringify(doc.initialState))});`];
+  if (doc.persistKey) bootLines.push(`window.xvml.persist(${escScript(JSON.stringify(doc.persistKey))});`);
+  if (doc.dataSrc) bootLines.push(`window.xvml.load(${escScript(JSON.stringify(doc.dataSrc))});`);
   const runtimeScript = isDynamic
-    ? `<script>${XVML_RUNTIME}\nwindow.xvml.init(${JSON.stringify(doc.initialState)});</script>`
+    ? `<script>${XVML_RUNTIME}\n${bootLines.join('\n')}</script>`
     : '';
 
   const html = `<!DOCTYPE html>

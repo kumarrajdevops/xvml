@@ -4,16 +4,19 @@ export interface RenderState {
   readonly idCounter: { n: number };
   readonly noScripts: boolean;
   readonly rtl: boolean;
-  // Item names of the @each blocks currently being rendered (innermost last)
-  readonly eachStack: string[];
+  // The @each blocks currently being rendered (innermost last)
+  readonly eachStack: Array<{ item: string; collection: string }>;
+  // True when the document uses dynamic commands — enables {path} interpolation
+  readonly dynamic: boolean;
 }
 
-export function createRenderState(flags: ReadonlySet<string>): RenderState {
+export function createRenderState(flags: ReadonlySet<string>, dynamic = false): RenderState {
   return {
     idCounter: { n: 0 },
     noScripts: flags.has('no-scripts'),
     rtl: flags.has('rtl'),
     eachStack: [],
+    dynamic,
   };
 }
 
@@ -66,25 +69,78 @@ function findKV(args: readonly Arg[], key: string): string | undefined {
   return args.find((a): a is KeyValueArg => a.type === 'keyvalue' && a.key === key)?.value;
 }
 
-// Inside @each, a bare keyword matching the loop item name (or item.path)
-// becomes a live <span data-xv> placeholder the runtime fills per item.
+// Inside @each, a bare keyword matching the loop item name (or item.path /
+// item__index) becomes a live <span data-xv> placeholder filled per item.
 function dynVarSpan(args: readonly Arg[], state: RenderState): string | undefined {
   for (let i = state.eachStack.length - 1; i >= 0; i--) {
-    const item = state.eachStack[i];
+    const item = state.eachStack[i].item;
     const kw = args.find((a): a is Extract<Arg, { type: 'keyword' }> =>
-      a.type === 'keyword' && (a.value === item || a.value.startsWith(`${item}.`))
+      a.type === 'keyword' &&
+      (a.value === item || a.value === `${item}__index` || a.value.startsWith(`${item}.`))
     );
     if (kw) return `<span data-xv="${esc(kw.value)}"></span>`;
   }
   return undefined;
 }
 
+// In dynamic documents, {path} inside string args becomes a live placeholder:
+// "Hello {name}" → Hello <span data-xv="name"></span>
+function interp(text: string, state: RenderState): string {
+  const escaped = esc(text);
+  if (!state.dynamic) return escaped;
+  return escaped.replace(/\{([\w.]+)\}/g, (_, p: string) => `<span data-xv="${p}"></span>`);
+}
+
 // Label content for text-bearing commands: literal string arg wins,
 // otherwise a loop-item keyword renders as a dynamic placeholder.
 function labelContent(args: readonly Arg[], state: RenderState): string {
   const str = firstStr(args);
-  if (str) return esc(str);
+  if (str) return interp(str, state);
   return dynVarSpan(args, state) ?? '';
+}
+
+// Map a loop-scoped path to a global state path with {item__index}
+// placeholders that the runtime interpolates per item:
+//   todo            → todos.{todo__index}
+//   member (nested) → teams.{team__index}.members.{member__index}
+// Paths that don't reference a loop item pass through unchanged.
+function globalStatePath(p: string, state: RenderState, depth = state.eachStack.length): string {
+  for (let i = depth - 1; i >= 0; i--) {
+    const { item, collection } = state.eachStack[i];
+    if (p === item || p.startsWith(`${item}.`)) {
+      const suffix = p === item ? '' : p.slice(item.length);
+      return `${globalStatePath(collection, state, i)}.{${item}__index}${suffix}`;
+    }
+  }
+  return p;
+}
+
+// Collect bind:<attr>=<path> args into a data-xattr attribute string.
+// Returns '' when there are no bind: args.
+function attrBindStr(node: XvmlNode): string {
+  const binds = node.args
+    .filter((a): a is KeyValueArg => a.type === 'keyvalue' && a.key.startsWith('bind:'))
+    .map(a => `${a.key.slice(5)}:${a.value}`);
+  return binds.length > 0 ? ` data-xattr="${esc(binds.join(';'))}"` : '';
+}
+
+// bind:<attr>=<path> args become a data-xattr attribute the runtime applies.
+// Injected right after the opening tag name of the rendered HTML.
+function applyAttrBinds(html: string, node: XvmlNode): string {
+  const attr = attrBindStr(node);
+  if (!attr) return html;
+  return html.replace(/^<([a-z0-9]+)/i, `<$1${attr}`);
+}
+
+// True when any node uses a dynamic command, an on:<event> action, or a
+// bind:<attr> binding — the renderer embeds the JS runtime when this is true.
+const DYNAMIC_COMMANDS = new Set(['if', 'each', 'bind', 'var', 'data']);
+
+export function treeUsesDynamic(nodes: readonly XvmlNode[]): boolean {
+  return nodes.some(n =>
+    DYNAMIC_COMMANDS.has(n.command) ||
+    n.args.some(a => a.type === 'keyvalue' && (a.key.startsWith('on:') || a.key.startsWith('bind:'))) ||
+    treeUsesDynamic(n.children));
 }
 
 // ── Render tree ───────────────────────────────────────────────────────────────
@@ -108,6 +164,16 @@ export function renderChildren(nodes: readonly XvmlNode[], state: RenderState): 
 }
 
 export function renderNode(node: XvmlNode, state: RenderState): string {
+  const html = renderNodeInner(node, state);
+  // @checkbox / @select / @bind render wrapper elements; they handle bind: attrs
+  // internally (injected on the actual <input>/<select>, not the wrapper).
+  if (node.command === 'checkbox' || node.command === 'select' || node.command === 'bind') {
+    return html;
+  }
+  return applyAttrBinds(html, node);
+}
+
+function renderNodeInner(node: XvmlNode, state: RenderState): string {
   switch (node.command) {
     case 'card':       return renderCard(node, state);
     case 'section':    return renderSection(node, state);
@@ -122,7 +188,7 @@ export function renderNode(node: XvmlNode, state: RenderState): string {
     case 'divider':    return renderDivider(node);
     case 'badge':      return renderBadge(node, state);
     case 'field':      return renderField(node, state);
-    case 'button':     return renderButton(node);
+    case 'button':     return renderButton(node, state);
     case 'checkbox':   return renderCheckbox(node, state);
     case 'select':     return renderSelect(node, state);
     case 'link':       return renderLink(node);
@@ -155,7 +221,8 @@ function renderCard(node: XvmlNode, state: RenderState): string {
   const mod = findKw(node.args, ['flat', 'outlined', 'compact']);
   const labelHtml = label ? `<h2 class="xvml-card__label">${esc(label)}</h2>` : '';
   const body = renderChildren(node.children, state);
-  return `<section class="${cls('xvml-card', mod && `xvml-card--${mod}`)}">${labelHtml}<div class="xvml-card__body">${body}</div></section>`;
+  const onClickAttr = eventAttr(node, 'click');
+  return `<section class="${cls('xvml-card', mod && `xvml-card--${mod}`)}"${onClickAttr}>${labelHtml}<div class="xvml-card__body">${body}</div></section>`;
 }
 
 function renderSection(node: XvmlNode, state: RenderState): string {
@@ -243,7 +310,8 @@ function renderDivider(node: XvmlNode): string {
 
 function renderBadge(node: XvmlNode, state: RenderState): string {
   const variant = findKw(node.args, ['neutral', 'success', 'warning', 'error', 'info']) ?? 'neutral';
-  return `<span class="xvml-badge xvml-badge--${variant}">${labelContent(node.args, state)}</span>`;
+  const onClickAttr = eventAttr(node, 'click');
+  return `<span class="xvml-badge xvml-badge--${variant}"${onClickAttr}>${labelContent(node.args, state)}</span>`;
 }
 
 // ── Form ──────────────────────────────────────────────────────────────────────
@@ -288,46 +356,87 @@ function renderField(node: XvmlNode, state: RenderState): string {
   return `<div class="xvml-field"><label class="xvml-field__label" for="${id}">${esc(label)}</label>${input}</div>`;
 }
 
-function renderButton(node: XvmlNode): string {
+function renderButton(node: XvmlNode, state: RenderState): string {
   const label = firstStr(node.args);
   const variant = findKw(node.args, ['default', 'primary', 'secondary', 'danger', 'ghost', 'link']) ?? 'default';
   const size = findKw(node.args, ['sm', 'md', 'lg']) ?? 'md';
   const full = hasKw(node.args, 'full');
   const disabled = hasKw(node.args, 'disabled');
-  const onClickAttr = buttonOnClick(node);
+  const onClickAttr = eventAttr(node, 'click');
   return (
     `<button class="${cls('xvml-button', `xvml-button--${variant}`, size !== 'md' && `xvml-button--${size}`, full && 'xvml-button--full')}" ` +
-    `type="button"${disabled ? ' disabled' : ''}${onClickAttr}>${esc(label)}</button>`
+    `type="button"${disabled ? ' disabled' : ''}${onClickAttr}>${labelContent(node.args, state)}</button>`
   );
 }
 
-// @button ... on:click=<action> — three action forms:
+// JS string-literal-safe key
+function jsKey(raw: string): string {
+  return raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+// JS literal for an action value: true/false/null/numbers pass through,
+// a lone {path} stays bare so the runtime interpolates it per loop item,
+// everything else becomes a string literal.
+function jsLiteral(raw: string): string {
+  if (raw === 'true' || raw === 'false' || raw === 'null') return raw;
+  if (raw !== '' && !isNaN(Number(raw))) return raw;
+  if (/^\{[\w.]+\}$/.test(raw)) return raw;
+  return `'${jsKey(raw)}'`;
+}
+
+// Action forms shared by on:click / on:change:
 //   key=value        → xvml.set('key', value)   (true/false/number parsed, else string)
 //   toggle:key       → xvml.set('key', !xvml.get('key'))
 //   fn:name          → window.name()
-function buttonOnClick(node: XvmlNode): string {
-  const arg = node.args.find(a => a.type === 'keyvalue' && a.key === 'on:click');
-  if (!arg || arg.type !== 'keyvalue' || !arg.value) return '';
-  const action = arg.value;
-  let js = '';
+//   push:key=value   → xvml.push('key', value)
+//   remove:key:idx   → xvml.removeAt('key', idx)   (idx is usually {item__index})
+function actionJs(action: string): string {
   if (action.startsWith('toggle:')) {
-    const key = action.slice(7);
-    js = `xvml.set('${key}',!xvml.get('${key}'))`;
-  } else if (action.startsWith('fn:')) {
-    const fn = action.slice(3);
-    js = `typeof window.${fn}==='function'&&window.${fn}()`;
-  } else if (action.includes('=')) {
-    const eq = action.indexOf('=');
-    const key = action.slice(0, eq);
-    const raw = action.slice(eq + 1);
-    const literal = raw === 'true' || raw === 'false' || (raw !== '' && !isNaN(Number(raw)))
-      ? raw
-      : `'${raw.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
-    js = `xvml.set('${key}',${literal})`;
-  } else {
-    return '';
+    const key = jsKey(action.slice(7));
+    return `xvml.set('${key}',!xvml.get('${key}'))`;
   }
-  return ` onclick="${esc(js)}"`;
+  if (action.startsWith('fn:')) {
+    const fn = action.slice(3);
+    if (!/^[\w$]+$/.test(fn)) return '';
+    return `typeof window.${fn}==='function'&&window.${fn}()`;
+  }
+  if (action.startsWith('push:')) {
+    const rest = action.slice(5);
+    const eq = rest.indexOf('=');
+    if (eq <= 0) return '';
+    return `xvml.push('${jsKey(rest.slice(0, eq))}',${jsLiteral(rest.slice(eq + 1))})`;
+  }
+  if (action.startsWith('remove:')) {
+    const rest = action.slice(7);
+    const colon = rest.indexOf(':');
+    if (colon <= 0) return '';
+    return `xvml.removeAt('${jsKey(rest.slice(0, colon))}',${jsLiteral(rest.slice(colon + 1))})`;
+  }
+  if (action.includes('=')) {
+    const eq = action.indexOf('=');
+    return `xvml.set('${jsKey(action.slice(0, eq))}',${jsLiteral(action.slice(eq + 1))})`;
+  }
+  return '';
+}
+
+// Render an on<event>="..." attribute from an on:<event>=<action> arg.
+function eventAttr(node: XvmlNode, event: 'click' | 'change'): string {
+  const action = findKV(node.args, `on:${event}`);
+  if (!action) return '';
+  const js = actionJs(action);
+  return js ? ` on${event}="${esc(js)}"` : '';
+}
+
+// on:change on @checkbox/@select: a bare key writes the control's own value
+// into state; any other form uses the shared action grammar.
+function changeAttr(node: XvmlNode, valueExpr: string): string {
+  const action = findKV(node.args, 'on:change');
+  if (!action) return '';
+  if (/^[\w.]+$/.test(action)) {
+    return ` onchange="${esc(`xvml.set('${jsKey(action)}',${valueExpr})`)}"`;
+  }
+  const js = actionJs(action);
+  return js ? ` onchange="${esc(js)}"` : '';
 }
 
 function renderCheckbox(node: XvmlNode, state: RenderState): string {
@@ -335,9 +444,16 @@ function renderCheckbox(node: XvmlNode, state: RenderState): string {
   const checked = hasKw(node.args, 'checked');
   const disabled = hasKw(node.args, 'disabled');
   const id = nextId(state, 'checkbox');
+  const onChangeAttr = changeAttr(node, 'this.checked');
+  // When on:change writes to a bare state key, mirror it as data-xb so the
+  // runtime can sync state → checkbox on external state changes (e.g. @persist).
+  const changeAction = findKV(node.args, 'on:change');
+  const xbAttr = changeAction && /^[\w.]+$/.test(changeAction) ? ` data-xb="${esc(changeAction)}"` : '';
+  // bind: attrs target the <input>, not the outer <label> wrapper
+  const bindAttr = attrBindStr(node);
   return (
     `<label class="xvml-checkbox" for="${id}">` +
-    `<input id="${id}" class="xvml-checkbox__input" type="checkbox"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''} />` +
+    `<input id="${id}" class="xvml-checkbox__input" type="checkbox"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''}${onChangeAttr}${xbAttr}${bindAttr} />` +
     `<span class="xvml-checkbox__label">${esc(label)}</span>` +
     `</label>`
   );
@@ -359,10 +475,12 @@ function renderSelect(node: XvmlNode, state: RenderState): string {
     .map(o => `<option value="${esc(o.toLowerCase().replace(/\s+/g, '-'))}">${esc(o)}</option>`)
     .join('');
 
+  const onChangeAttr = changeAttr(node, 'this.value');
+  const bindAttr = attrBindStr(node);
   return (
     `<div class="xvml-select">` +
     `<label class="xvml-select__label" for="${id}">${esc(label)}</label>` +
-    `<select id="${id}" class="xvml-select__input"${required ? ' required' : ''}>${optionsHtml}</select>` +
+    `<select id="${id}" class="xvml-select__input"${required ? ' required' : ''}${onChangeAttr}${bindAttr}>${optionsHtml}</select>` +
     `</div>`
   );
 }
@@ -371,7 +489,8 @@ function renderLink(node: XvmlNode): string {
   const label = nthStr(node.args, 0);
   const href = nthStr(node.args, 1, '#');
   const blank = hasKw(node.args, 'blank');
-  return `<a class="xvml-link" href="${esc(href)}"${blank ? ' target="_blank" rel="noreferrer"' : ''}>${esc(label)}</a>`;
+  const onClickAttr = eventAttr(node, 'click');
+  return `<a class="xvml-link" href="${esc(href)}"${blank ? ' target="_blank" rel="noreferrer"' : ''}${onClickAttr}>${esc(label)}</a>`;
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -500,7 +619,9 @@ function renderAlert(node: XvmlNode): string {
 // ── Dynamic commands ──────────────────────────────────────────────────────────
 
 function renderIf(node: XvmlNode, state: RenderState): string {
-  const expr = node.args[0]?.type === 'keyword' ? node.args[0].value : '';
+  // The parser stores the whole condition as one raw keyword arg:
+  // a key, !key, or a comparison like: count > 0, role == "admin"
+  const expr = node.args[0]?.type === 'keyword' ? node.args[0].value.trim() : '';
   if (!expr) return '';
   // @else splits the children into two branches; the else branch gets the negated expr
   const elseIdx = node.children.findIndex(c => c.command === 'else');
@@ -509,7 +630,10 @@ function renderIf(node: XvmlNode, state: RenderState): string {
   // Hidden by default; JS runtime shows/hides based on state
   let html = `<div data-xi="${esc(expr)}" style="display:none">${renderChildren(ifChildren, state)}</div>`;
   if (elseChildren.length > 0) {
-    const negated = expr.startsWith('!') ? expr.slice(1) : `!${expr}`;
+    const simple = /^!?[\w.]+$/.test(expr);
+    const negated = simple
+      ? (expr.startsWith('!') ? expr.slice(1) : `!${expr}`)
+      : `!(${expr})`;
     html += `<div data-xi="${esc(negated)}" style="display:none">${renderChildren(elseChildren, state)}</div>`;
   }
   return html;
@@ -521,7 +645,7 @@ function renderEach(node: XvmlNode, state: RenderState): string {
   const inIdx = kws.indexOf('in');
   const itemName = inIdx > 0 ? kws[inIdx - 1] : (kws[0] ?? 'item');
   const collection = inIdx >= 0 && kws[inIdx + 1] ? kws[inIdx + 1] : kws[kws.length - 1] ?? '';
-  state.eachStack.push(itemName);
+  state.eachStack.push({ item: itemName, collection });
   const children = renderChildren(node.children, state);
   state.eachStack.pop();
   return (
@@ -533,16 +657,52 @@ function renderEach(node: XvmlNode, state: RenderState): string {
 }
 
 function renderBind(node: XvmlNode, state: RenderState): string {
-  // @bind <var> "label" [type]
+  // @bind <var> "label" [type] — type: text|email|number|...|checkbox|select
+  // select options come from a second string arg: @bind team "Team" select "A | B | C"
+  // Inside @each, <var> may be the loop item (or item.path): the input reads
+  // the scoped value and writes back to the item's index in the collection.
   const varName = node.args[0]?.type === 'keyword' ? node.args[0].value : '';
   const label = firstStr(node.args);
   const inputType = String(node.args.find(a => a.type === 'keyword' && a.value !== varName)?.value ?? 'text');
   const id = nextId(state, 'bind');
+  const key = esc(varName);
+  // write path: global, with {item__index} placeholders interpolated per item
+  const setKey = jsKey(globalStatePath(varName, state));
+
+  const bindAttr = attrBindStr(node);
+
+  if (inputType === 'checkbox') {
+    return (
+      `<label class="xvml-checkbox" for="${id}">` +
+      `<input id="${id}" class="xvml-checkbox__input" type="checkbox" ` +
+      `data-xb="${key}" onchange="${esc(`xvml.set('${setKey}',this.checked)`)}"${bindAttr} />` +
+      `<span class="xvml-checkbox__label">${esc(label || varName)}</span>` +
+      `</label>`
+    );
+  }
+
+  if (inputType === 'select') {
+    const optionsStr = nthStr(node.args, 1);
+    const options = optionsStr.split('|').map(s => s.trim()).filter(Boolean);
+    const optionsHtml = options.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
+    return (
+      `<div class="xvml-select">` +
+      `<label class="xvml-select__label" for="${id}">${esc(label || varName)}</label>` +
+      `<select id="${id}" class="xvml-select__input" ` +
+      `data-xb="${key}" onchange="${esc(`xvml.set('${setKey}',this.value)`)}"${bindAttr}>${optionsHtml}</select>` +
+      `</div>`
+    );
+  }
+
+  // number inputs coerce to Number so comparisons in @if work
+  const setter = inputType === 'number'
+    ? `xvml.set('${setKey}',this.value===''?0:Number(this.value))`
+    : `xvml.set('${setKey}',this.value)`;
   return (
     `<div class="xvml-field">` +
     `<label class="xvml-field__label" for="${id}">${esc(label || varName)}</label>` +
     `<input class="xvml-field__input" id="${id}" type="${esc(inputType)}" ` +
-    `data-xb="${esc(varName)}" oninput="xvml.set('${esc(varName)}',this.value)" value="" />` +
+    `data-xb="${key}" oninput="${esc(setter)}" value=""${bindAttr} />` +
     `</div>`
   );
 }

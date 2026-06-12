@@ -1058,29 +1058,69 @@ Passes configuration flags to the renderer. Affects the output HTML but emits no
 
 ## Dynamic Commands
 
-When any dynamic command (or an `on:click` attribute) appears in a document, the renderer embeds a small reactive JS runtime (~50 lines, inlined) plus the initial state from `@data`. Pages without dynamic commands stay 100% static — no JS is emitted.
+When any dynamic command (or an `on:<event>` / `bind:<attr>` attribute) appears in a document, the renderer embeds a small reactive JS runtime (~90 lines, inlined) plus the initial state from `@data`. Pages without dynamic commands stay 100% static — no JS is emitted.
 
 | Command                      | Purpose                                                       |
 |------------------------------|---------------------------------------------------------------|
 | `@data ... @@end`            | Block of raw JSON defining initial state (raw mode, closes with `@@end`) |
-| `@if <key>` … `@end`         | Show children only while `state.key` is truthy                |
-| `@if !<key>` … `@end`        | Show children only while `state.key` is falsy                 |
-| `@if <key>` … `@else` … `@end` | Two branches; exactly one is visible at any time            |
-| `@each <item> in <key>` … `@end` | Repeat children once per element of the state array       |
-| `@bind <key> "Label" [type]` | Input field two-way bound to `state.key`                      |
+| `@data src=<url>`            | Fetch initial state JSON from a URL at page load (merged over `@data` defaults) |
+| `@persist <key>`             | Save state to `localStorage` under `<key>`; saved state overlays `@data` defaults on load |
+| `@if <cond>` … `@end`        | Show children only while the condition holds                  |
+| `@if <cond>` … `@else` … `@end` | Two branches; exactly one is visible at any time            |
+| `@each <item> in <key>` … `@end` | Repeat children once per element of the state array; nests — inner collections may be item-scoped (`team.members`) |
+| `@bind <key> "Label" [type]` | Input two-way bound to `state.key`                            |
 | `@var <key>`                 | Render `state.key` as inline text, live-updating              |
 
 State keys support **dot paths** for nested objects everywhere they appear: `@if user.active`, `@var user.role`, `@bind user.name "Name"`.
 
-### `on:click` actions on `@button`
+### `@if` conditions
 
-`@button` accepts an `on:click=<action>` key-value argument with three action forms:
+`@if` accepts exactly these forms — anything else is a **parse error**, never a silent fallback:
+
+| Form                     | Example                                |
+|--------------------------|----------------------------------------|
+| `<key>` (truthy)         | `@if loggedIn`, `@if user.active`      |
+| `!<key>` (falsy)         | `@if !loggedIn`                        |
+| `<key> <op> <literal>`   | `@if count > 0`, `@if role == "admin"` |
+
+Operators: `==` `!=` `>` `<` `>=` `<=`. Literals: quoted strings, numbers, `true`/`false`/`null`, or bare words (compared as strings).
+
+### `@bind` types
+
+The optional type keyword is any HTML text-input type plus two control forms:
+
+| Type        | Example                                   | Behavior                                  |
+|-------------|-------------------------------------------|-------------------------------------------|
+| text et al. | `@bind name "Your name" text`             | Syncs `value` on input                    |
+| `number`    | `@bind count "Count" number`              | Coerces to `Number` so `@if count > 0` works |
+| `checkbox`  | `@bind dark "Dark mode" checkbox`         | Syncs boolean via `checked`               |
+| `select`    | `@bind team "Team" select "A \| B \| C"`  | Pipe-delimited options, syncs `value`     |
+
+### String interpolation
+
+In dynamic documents, `{path}` inside any string argument becomes a live placeholder: `@text "Hello {name}"` renders `Hello <span data-xv="name"></span>`. Static documents leave braces literal.
+
+### Events: `on:click` and `on:change`
+
+`on:click=<action>` is accepted on `@button`, `@link`, `@card`, and `@badge`. `on:change=<action>` is accepted on `@checkbox` and `@select` — a bare state key writes the control's own value (`this.checked` / `this.value`) into state; otherwise the shared action grammar applies:
 
 | Form                  | Example                                  | Effect                          |
 |-----------------------|------------------------------------------|---------------------------------|
 | `key=value`           | `@button "Save" on:click=saved=true`     | `xvml.set('saved', true)` — `true`/`false`/numbers are parsed, anything else is a string |
 | `toggle:key`          | `@button "Dark" on:click=toggle:dark`    | `xvml.set('dark', !xvml.get('dark'))` |
 | `fn:name`             | `@button "Run" on:click=fn:myHandler`    | Calls `window.myHandler()` if defined |
+| `push:key=value`      | `@button "Add" on:click=push:items=new`  | `xvml.push('items', 'new')` — append to a state array |
+| `remove:key:index`    | `@button "✕" on:click=remove:items:{item__index}` | `xvml.removeAt('items', i)` — delete by index |
+
+### Loops: index and per-item values
+
+Inside `@each item in items`, `item__index` resolves to the element's zero-based index. `{path}` placeholders inside event-handler actions are interpolated **per item with JSON-typed values**: `on:click=selected={item.id}` sets the actual id (number stays number), not the literal string.
+
+`@bind` is item-scoped inside a loop: `@bind todo "Todo" text` inside `@each todo in todos` reads the current item and writes edits back to `todos.<index>` — editing array elements in place. Item sub-paths work too (`@bind member.name` inside nested loops writes to `teams.<i>.members.<j>.name`).
+
+### Attribute binding
+
+Any element accepts `bind:<attr>=<path>` key-value args, binding an HTML attribute to state: `@button "Save" bind:disabled=busy`, `@badge "mode" bind:class=modeClass`. Boolean state toggles the attribute's presence; `bind:class` appends the bound value after the element's base classes. Multiple `bind:` args may appear on one element.
 
 ### Example
 
@@ -1109,7 +1149,7 @@ State keys support **dot paths** for nested objects everywhere they appear: `@if
 
 ### Browser console API
 
-The runtime exposes `window.xvml`: `xvml.state` (current state object), `xvml.get('key')`, `xvml.set('key', value)` (updates and re-renders), `xvml.init(obj)` (merge initial state). `get`/`set` accept dot paths.
+The runtime exposes `window.xvml`: `xvml.state` (current state object), `xvml.get('key')`, `xvml.set('key', value)` (updates and re-renders), `xvml.init(obj)` (merge initial state), `xvml.push('key', value)` / `xvml.removeAt('key', index)` (array helpers), `xvml.persist('key')` (localStorage sync), `xvml.load(url)` (fetch + merge remote JSON). `get`/`set` accept dot paths.
 
 ---
 

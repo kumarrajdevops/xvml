@@ -369,3 +369,188 @@ describe('renderer — loop item substitution', () => {
     expect(html).not.toContain('data-xv');
   });
 });
+
+describe('renderer — @if comparisons', () => {
+  it('renders the full comparison expression into data-xi', async () => {
+    const html = await render('@page test\n@data\n{ "count": 0 }\n@@end\n@if count > 0\n  @text "has items"\n@end');
+    expect(html).toContain('data-xi="count &gt; 0"');
+  });
+
+  it('negates a comparison @else branch with !(...)', async () => {
+    const html = await render('@page test\n@data\n{ "count": 0 }\n@@end\n@if count > 0\n  @text "yes"\n@else\n  @text "no"\n@end');
+    expect(html).toContain('data-xi="!(count &gt; 0)"');
+  });
+});
+
+describe('renderer — @bind checkbox and select', () => {
+  it('renders @bind ... checkbox as a checkbox synced via checked', async () => {
+    const html = await render('@page test\n@bind dark "Dark mode" checkbox');
+    expect(html).toContain('type="checkbox"');
+    expect(html).toContain('data-xb="dark"');
+    expect(html).toContain(`onchange="xvml.set('dark',this.checked)"`);
+  });
+
+  it('renders @bind ... select with pipe-delimited options', async () => {
+    const html = await render('@page test\n@bind team "Team" select "Alpha | Beta"');
+    expect(html).toContain('data-xb="team"');
+    expect(html).toContain(`onchange="xvml.set('team',this.value)"`);
+    expect(html).toContain('<option value="Alpha">Alpha</option>');
+    expect(html).toContain('<option value="Beta">Beta</option>');
+  });
+});
+
+describe('renderer — string interpolation', () => {
+  it('turns {path} into a live placeholder in dynamic documents', async () => {
+    const html = await render('@page test\n@data\n{ "name": "Alex" }\n@@end\n@text "Hello {name}"');
+    expect(html).toContain('Hello <span data-xv="name"></span>');
+  });
+
+  it('leaves {braces} literal in fully static documents', async () => {
+    const html = await render('@page test\n@text "Hello {name}"');
+    expect(html).toContain('Hello {name}');
+    expect(html).not.toContain('data-xv');
+  });
+});
+
+describe('renderer — events beyond @button', () => {
+  it('supports on:click on @link, @card, and @badge', async () => {
+    const html = await render([
+      '@page test',
+      '@card "Box" on:click=open=true',
+      '  @link "Home" "#" on:click=pageName=home',
+      '  @badge "tag" neutral on:click=toggle:tagOn',
+      '@end',
+    ].join('\n'));
+    expect(html).toContain(`<section class="xvml-card" onclick="xvml.set('open',true)"`);
+    expect(html).toContain(`<a class="xvml-link" href="#" onclick="xvml.set('pageName','home')"`);
+    expect(html).toContain(`onclick="xvml.set('tagOn',!xvml.get('tagOn'))"`);
+  });
+
+  it('supports on:change on @checkbox and @select with a bare state key', async () => {
+    const html = await render([
+      '@page test',
+      '@checkbox "Notifications" on:change=notify',
+      '@select "Team" "A | B" on:change=team',
+    ].join('\n'));
+    expect(html).toContain(`onchange="xvml.set('notify',this.checked)"`);
+    expect(html).toContain(`onchange="xvml.set('team',this.value)"`);
+  });
+
+  it('embeds the runtime when the only dynamic feature is an on:change or bind: arg', async () => {
+    const a = await render('@page test\n@checkbox "N" on:change=notify');
+    expect(a).toContain('window.xvml');
+    const b = await render('@page test\n@badge "x" neutral bind:class=mode');
+    expect(b).toContain('window.xvml');
+  });
+});
+
+describe('renderer — per-item loop actions', () => {
+  it('renders remove: and push: actions calling removeAt/push', async () => {
+    const html = await render([
+      '@page test',
+      '@data',
+      '{ "items": ["a"] }',
+      '@@end',
+      '@each item in items',
+      '  @button "Remove" on:click=remove:items:{item__index}',
+      '@end',
+      '@button "Add" on:click=push:items=new',
+    ].join('\n'));
+    expect(html).toContain(`onclick="xvml.removeAt('items',{item__index})"`);
+    expect(html).toContain(`onclick="xvml.push('items','new')"`);
+  });
+
+  it('emits a lone {path} action value unquoted for typed interpolation', async () => {
+    const html = await render([
+      '@page test',
+      '@data',
+      '{ "items": [1], "selected": 0 }',
+      '@@end',
+      '@each item in items',
+      '  @button "Pick" on:click=selected={item}',
+      '@end',
+    ].join('\n'));
+    expect(html).toContain(`onclick="xvml.set('selected',{item})"`);
+  });
+});
+
+describe('renderer — attribute binding', () => {
+  it('turns bind:attr=path args into data-xattr', async () => {
+    const html = await render('@page test\n@data\n{ "busy": true }\n@@end\n@button "Go" bind:disabled=busy');
+    expect(html).toContain('data-xattr="disabled:busy"');
+  });
+
+  it('joins multiple bind: args with semicolons', async () => {
+    const html = await render('@page test\n@data\n{ "m": "x" }\n@@end\n@badge "b" neutral bind:class=m bind:title=m');
+    expect(html).toContain('data-xattr="class:m;title:m"');
+  });
+});
+
+describe('renderer — persistence and remote data', () => {
+  it('emits xvml.persist for @persist', async () => {
+    const html = await render('@page test\n@persist "demo-app"\n@var count');
+    expect(html).toContain('window.xvml.persist("demo-app");');
+  });
+
+  it('emits xvml.load for @data src=', async () => {
+    const html = await render('@page test\n@data src=/state.json\n@var count');
+    expect(html).toContain('window.xvml.load("/state.json");');
+  });
+});
+
+describe('renderer — nested @each', () => {
+  it('renders an inner data-xe inside the outer template', async () => {
+    const html = await render([
+      '@page test',
+      '@data',
+      '{ "teams": [] }',
+      '@@end',
+      '@each team in teams',
+      '  @text team.name',
+      '  @each member in team.members',
+      '    @badge member neutral',
+      '  @end',
+      '@end',
+    ].join('\n'));
+    expect(html).toContain('data-xe="teams"');
+    expect(html).toContain('data-xe="team.members"');
+    expect(html).toContain('data-xv="member"');
+  });
+});
+
+describe('renderer — item-scoped @bind (edit in place)', () => {
+  it('binds a loop item: reads scoped, writes to collection.{index}', async () => {
+    const html = await render([
+      '@page test',
+      '@data',
+      '{ "todos": ["a"] }',
+      '@@end',
+      '@each todo in todos',
+      '  @bind todo "Edit" text',
+      '@end',
+    ].join('\n'));
+    expect(html).toContain('data-xb="todo"');
+    expect(html).toContain(`oninput="xvml.set('todos.{todo__index}',this.value)"`);
+  });
+
+  it('resolves nested loops and item sub-paths', async () => {
+    const html = await render([
+      '@page test',
+      '@data',
+      '{ "teams": [] }',
+      '@@end',
+      '@each team in teams',
+      '  @each member in team.members',
+      '    @bind member.name "Name" text',
+      '  @end',
+      '@end',
+    ].join('\n'));
+    expect(html).toContain('data-xb="member.name"');
+    expect(html).toContain(`oninput="xvml.set('teams.{team__index}.members.{member__index}.name',this.value)"`);
+  });
+
+  it('leaves non-loop @bind keys untouched', async () => {
+    const html = await render('@page test\n@bind user.name "Name" text');
+    expect(html).toContain(`oninput="xvml.set('user.name',this.value)"`);
+  });
+});

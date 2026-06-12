@@ -371,60 +371,137 @@ body{margin:0}
 }</style>
 </head>
 <body class="xvml-page xvml-theme-light">
-<section class="xvml-card"><h2 class="xvml-card__label">@if / @else</h2><div class="xvml-card__body"><div data-xi="loggedIn" style="display:none"><div class="xvml-alert xvml-alert--success" role="alert"><span class="xvml-alert__icon">✓</span><span class="xvml-alert__message">You are logged in</span></div><button class="xvml-button xvml-button--secondary" type="button" onclick="xvml.set('loggedIn',false)">Sign out</button></div><div data-xi="!loggedIn" style="display:none"><div class="xvml-alert xvml-alert--info" role="alert"><span class="xvml-alert__icon">ℹ</span><span class="xvml-alert__message">You are signed out</span></div><button class="xvml-button xvml-button--primary" type="button" onclick="xvml.set('loggedIn',true)">Sign in</button></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">on:click actions</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">Count:</p><span data-xv="count"></span><div class="xvml-layout xvml-layout--inline"><button class="xvml-button xvml-button--primary" type="button" onclick="xvml.set('count',10)">Set to 10</button><button class="xvml-button xvml-button--secondary" type="button" onclick="xvml.set('count',0)">Reset</button></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">toggle: action</h2><div class="xvml-card__body"><div data-xi="darkMode" style="display:none"><span class="xvml-badge xvml-badge--success">darkMode: ON</span></div><div data-xi="!darkMode" style="display:none"><span class="xvml-badge xvml-badge--neutral">darkMode: OFF</span></div><button class="xvml-button xvml-button--ghost" type="button" onclick="xvml.set('darkMode',!xvml.get('darkMode'))">Toggle darkMode</button></div></section><section class="xvml-card"><h2 class="xvml-card__label">Dot-path state</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">Role:</p><span data-xv="user.role"></span><div data-xi="user.active" style="display:none"><span class="xvml-badge xvml-badge--success">Active user</span></div><div data-xi="!user.active" style="display:none"><span class="xvml-badge xvml-badge--neutral">Inactive</span></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Two-way binding</h2><div class="xvml-card__body"><div class="xvml-field"><label class="xvml-field__label" for="xvml-bind-0">Your name</label><input class="xvml-field__input" id="xvml-bind-0" type="text" data-xb="name" oninput="xvml.set('name',this.value)" value="" /></div><p class="xvml-text xvml-text--muted">Hello,</p><span data-xv="name"></span></div></section><section class="xvml-card"><h2 class="xvml-card__label">Loops</h2><div class="xvml-card__body"><div data-xe="tags" data-xei="tag"><template><span class="xvml-badge xvml-badge--neutral"><span data-xv="tag"></span></span></template><div data-xec></div></div><p class="xvml-text xvml-text--muted">Open DevTools console and try:</p><div class="xvml-codeblock"><div class="xvml-codeblock__header"><span class="xvml-codeblock__lang">js</span></div><pre class="xvml-codeblock__pre"><code class="xvml-codeblock__code language-js">xvml.set('tags', ['render', 'is', 'live'])
+<p class="xvml-text xvml-text--muted">State on this page persists across reloads (@persist). To reset the demo, run localStorage.removeItem('xvml-dynamic-demo') in the DevTools console and refresh.</p><section class="xvml-card"><h2 class="xvml-card__label">@if / @else</h2><div class="xvml-card__body"><div data-xi="loggedIn" style="display:none"><div class="xvml-alert xvml-alert--success" role="alert"><span class="xvml-alert__icon">✓</span><span class="xvml-alert__message">You are logged in</span></div><button class="xvml-button xvml-button--secondary" type="button" onclick="xvml.set('loggedIn',false)">Sign out</button></div><div data-xi="!loggedIn" style="display:none"><div class="xvml-alert xvml-alert--info" role="alert"><span class="xvml-alert__icon">ℹ</span><span class="xvml-alert__message">You are signed out</span></div><button class="xvml-button xvml-button--primary" type="button" onclick="xvml.set('loggedIn',true)">Sign in</button></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">on:click actions + @if comparisons</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">Count: <span data-xv="count"></span></p><div data-xi="count &gt; 0" style="display:none"><span class="xvml-badge xvml-badge--success">count is positive</span></div><div data-xi="!(count &gt; 0)" style="display:none"><span class="xvml-badge xvml-badge--neutral">count is zero (or less)</span></div><div class="xvml-layout xvml-layout--inline"><button class="xvml-button xvml-button--primary" type="button" onclick="xvml.set('count',10)">Set to 10</button><button class="xvml-button xvml-button--secondary" type="button" onclick="xvml.set('count',0)">Reset</button></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Per-item actions (@each + edit/remove/push)</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">A todo list: each row is a loop item. Type in a row to edit that todo in place, Done ✕ deletes it, Add appends one.</p><div data-xe="todos" data-xei="todo"><template><div class="xvml-layout xvml-layout--inline"><div class="xvml-field"><label class="xvml-field__label" for="xvml-bind-0">Todo</label><input class="xvml-field__input" id="xvml-bind-0" type="text" data-xb="todo" oninput="xvml.set('todos.{todo__index}',this.value)" value="" /></div><button class="xvml-button xvml-button--ghost xvml-button--sm" type="button" onclick="xvml.removeAt('todos',{todo__index})">Done ✕</button></div></template><div data-xec></div></div><button class="xvml-button xvml-button--secondary" type="button" onclick="xvml.push('todos','Task')">Add a todo</button></div></section><section class="xvml-card"><h2 class="xvml-card__label">Nested @each (loops inside loops)</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">Outer loop renders each team from state; the inner loop renders that team's own members (team.members is scoped to the current team, not global state).</p><div data-xe="teams" data-xei="team"><template><p class="xvml-subtitle"><span data-xv="team.name"></span></p><div data-xe="team.members" data-xei="member"><template><span class="xvml-badge xvml-badge--info"><span data-xv="member"></span></span></template><div data-xec></div></div></template><div data-xec></div></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">More inputs (@bind checkbox/select, on:change)</h2><div class="xvml-card__body"><label class="xvml-checkbox" for="xvml-bind-1"><input id="xvml-bind-1" class="xvml-checkbox__input" type="checkbox" data-xb="darkMode" onchange="xvml.set('darkMode',this.checked)" /><span class="xvml-checkbox__label">Dark mode</span></label><div class="xvml-select"><label class="xvml-select__label" for="xvml-bind-2">Team</label><select id="xvml-bind-2" class="xvml-select__input" data-xb="team" onchange="xvml.set('team',this.value)"><option value="Alpha">Alpha</option><option value="Beta">Beta</option><option value="Gamma">Gamma</option></select></div><p class="xvml-text xvml-text--muted">Team: <span data-xv="team"></span></p><label class="xvml-checkbox" for="xvml-checkbox-3"><input id="xvml-checkbox-3" class="xvml-checkbox__input" type="checkbox" onchange="xvml.set('notify',this.checked)" data-xb="notify" /><span class="xvml-checkbox__label">Email notifications</span></label><div data-xi="notify" style="display:none"><span class="xvml-badge xvml-badge--success">notifications ON</span></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Attribute binding</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">The button below is disabled while signed out:</p><button data-xattr="disabled:!loggedIn" class="xvml-button xvml-button--primary" type="button">Members only</button></div></section><section class="xvml-card"><h2 class="xvml-card__label">toggle: action</h2><div class="xvml-card__body"><div data-xi="darkMode" style="display:none"><span class="xvml-badge xvml-badge--success">darkMode: ON</span></div><div data-xi="!darkMode" style="display:none"><span class="xvml-badge xvml-badge--neutral">darkMode: OFF</span></div><button class="xvml-button xvml-button--ghost" type="button" onclick="xvml.set('darkMode',!xvml.get('darkMode'))">Toggle darkMode</button></div></section><section class="xvml-card"><h2 class="xvml-card__label">Dot-path state (nested JSON)</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">Reads inside the nested user object from @data: user.role prints the role, user.active drives the badge. Try xvml.set('user.active', false) in the console.</p><p class="xvml-text">Role: <span data-xv="user.role"></span></p><div data-xi="user.active" style="display:none"><span class="xvml-badge xvml-badge--success">Active user</span></div><div data-xi="!user.active" style="display:none"><span class="xvml-badge xvml-badge--neutral">Inactive</span></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Two-way binding</h2><div class="xvml-card__body"><div class="xvml-field"><label class="xvml-field__label" for="xvml-bind-4">Your name</label><input class="xvml-field__input" id="xvml-bind-4" type="text" data-xb="name" oninput="xvml.set('name',this.value)" value="" /></div><p class="xvml-text xvml-text--muted">Hello,</p><span data-xv="name"></span></div></section><section class="xvml-card"><h2 class="xvml-card__label">Loops</h2><div class="xvml-card__body"><div data-xe="tags" data-xei="tag"><template><span class="xvml-badge xvml-badge--neutral"><span data-xv="tag"></span></span></template><div data-xec></div></div><p class="xvml-text xvml-text--muted">Open DevTools console and try:</p><div class="xvml-codeblock"><div class="xvml-codeblock__header"><span class="xvml-codeblock__lang">js</span></div><pre class="xvml-codeblock__pre"><code class="xvml-codeblock__code language-js">xvml.set('tags', ['render', 'is', 'live'])
 xvml.set('tags', [...xvml.get('tags'), 'appended'])
 xvml.set('tags', [])</code></pre></div></div></section>
 <script>(function(){
-  var s={};
+  var s={},pk=null;
+  function _get(o,p){return p.split('.').reduce(function(a,k){return a==null?a:a[k];},o);}
+  // Resolve a path against the loop-scope chain (innermost first), then global state.
+  // Inside @each item in xs: 'item' = element, 'item.x' = property, 'item__index' = index.
+  function _sc(p,sc){
+    for(var i=sc.length-1;i>=0;i--){
+      if(p===sc[i].n)return sc[i].v;
+      if(p===sc[i].n+'__index')return sc[i].i;
+      if(p.indexOf(sc[i].n+'.')===0)return _get(sc[i].v,p.slice(sc[i].n.length+1));
+    }
+    return _get(s,p);
+  }
+  function _lit(t){
+    t=t.trim();
+    if(t==='true')return true;
+    if(t==='false')return false;
+    if(t==='null')return null;
+    if(t!==''&&!isNaN(Number(t)))return Number(t);
+    var q=t.match(/^'(.*)'$/)||t.match(/^"(.*)"$/);
+    return q?q[1]:t;
+  }
+  // Evaluate a data-xi condition: key | !key | !(expr) | key OP literal
+  function _ev(e,sc){
+    e=e.trim();
+    if(e.slice(0,2)==='!('&&e.slice(-1)===')')return !_ev(e.slice(2,-1),sc);
+    var m=e.match(/^(.+?)\s*(==|!=|>=|<=|>|<)\s*(.+)$/);
+    if(m){
+      var l=_sc(m[1].trim(),sc),r=_lit(m[3]);
+      switch(m[2]){
+        case'==':return l==r;
+        case'!=':return l!=r;
+        case'>':return l>r;
+        case'<':return l<r;
+        case'>=':return l>=r;
+        case'<=':return l<=r;
+      }
+    }
+    var n=e[0]==='!';
+    return (!!_sc(n?e.slice(1):e,sc))!==n;
+  }
+  // Elements matching sel under root, excluding those inside a nested data-xe
+  // (loop content is rebuilt by its own @each pass with the right scope).
+  function _own(root,sel){
+    return Array.prototype.filter.call(root.querySelectorAll(sel),function(el){
+      var p=el.parentElement&&el.parentElement.closest('[data-xe]');
+      return !(p&&p!==root&&root.contains(p));
+    });
+  }
+  function _proc(root,sc){
+    _own(root,'[data-xi]').forEach(function(el){
+      el.style.display=_ev(el.dataset.xi,sc)?'':'none';
+    });
+    _own(root,'[data-xv]').forEach(function(el){
+      var v=_sc(el.dataset.xv,sc);
+      el.textContent=v!==undefined?String(v):'';
+    });
+    _own(root,'[data-xb]').forEach(function(el){
+      if(el===document.activeElement)return;
+      var v=_sc(el.dataset.xb,sc);
+      if(el.type==='checkbox')el.checked=!!v;
+      else el.value=v!==undefined?v:'';
+    });
+    // data-xattr="attr1:path1;attr2:path2" — bind element attributes to state.
+    // A leading ! on the path negates truthiness (bind:disabled=!loggedIn).
+    _own(root,'[data-xattr]').forEach(function(el){
+      el.dataset.xattr.split(';').forEach(function(pair){
+        var ci=pair.indexOf(':'),a=pair.slice(0,ci),k=pair.slice(ci+1),
+            v=k[0]==='!'?!_sc(k.slice(1),sc):_sc(k,sc);
+        if(a==='class'){
+          if(el.__xbc===undefined)el.__xbc=el.className;
+          el.className=el.__xbc+(v?' '+String(v):'');
+        }else if(v===true)el.setAttribute(a,'');
+        else if(v===false||v===undefined||v===null)el.removeAttribute(a);
+        else el.setAttribute(a,String(v));
+      });
+    });
+    _own(root,'[data-xe]').forEach(function(el){
+      // skip rebuild only while the user is typing in a text field inside this
+      // loop — buttons/checkboxes inside it must still trigger a redraw
+      var ae=document.activeElement;
+      if(ae&&el.contains(ae)&&(ae.tagName==='TEXTAREA'||
+        (ae.tagName==='INPUT'&&ae.type!=='checkbox'&&ae.type!=='radio')))return;
+      var arr=_sc(el.dataset.xe,sc),iname=el.dataset.xei;
+      var t=el.querySelector('template'),c=el.querySelector('[data-xec]');
+      if(!t||!c)return;
+      c.innerHTML='';
+      if(!Array.isArray(arr))return;
+      arr.forEach(function(v,i){
+        var h=document.createElement('div');
+        h.appendChild(document.importNode(t.content,true));
+        var sc2=sc.concat([{n:iname,v:v,i:i}]);
+        // interpolate {path} placeholders in event handlers per item
+        Array.prototype.forEach.call(h.querySelectorAll('[onclick],[onchange],[oninput]'),function(b){
+          ['onclick','onchange','oninput'].forEach(function(at){
+            var oc=b.getAttribute(at);
+            if(oc&&oc.indexOf('{')>-1)b.setAttribute(at,oc.replace(/\{([\w.]+)\}/g,function(_,p){
+              return JSON.stringify(_sc(p,sc2));
+            }));
+          });
+        });
+        _proc(h,sc2);
+        while(h.firstChild)c.appendChild(h.firstChild);
+      });
+    });
+  }
+  function _save(){if(pk)try{localStorage.setItem(pk,JSON.stringify(s));}catch(e){}}
+  function _u(){_proc(document.body,[]);_save();}
   function set(k,v){
     var p=k.split('.'),o=s,i;
     for(i=0;i<p.length-1;i++){if(typeof o[p[i]]!=='object'||o[p[i]]===null)o[p[i]]={};o=o[p[i]];}
     o[p[p.length-1]]=v;_u();
   }
   function get(k){return _get(s,k);}
-  function init(data){Object.assign(s,data);_u();}
-  function _u(){
-    // @if
-    document.querySelectorAll('[data-xi]').forEach(function(el){
-      var e=el.dataset.xi,n=e[0]==='!',k=n?e.slice(1):e;
-      el.style.display=(!!_get(s,k))!==n?'':'none';
-    });
-    // @bind inputs
-    document.querySelectorAll('[data-xb]').forEach(function(el){
-      var v=_get(s,el.dataset.xb);
-      if(el!==document.activeElement)el.value=v!==undefined?v:'';
-    });
-    // @each
-    document.querySelectorAll('[data-xe]').forEach(function(el){
-      var k=el.dataset.xe,iname=el.dataset.xei;
-      var t=el.querySelector('template');
-      var c=el.querySelector('[data-xec]');
-      if(!t||!c)return;
-      c.innerHTML='';
-      var arr=s[k];if(!Array.isArray(arr))return;
-      arr.forEach(function(v){
-        var clone=document.importNode(t.content,true);
-        clone.querySelectorAll('[data-xv]').forEach(function(n){
-          var path=n.dataset.xv;
-          var val=path.startsWith(iname+'.')?
-            _get(v,path.slice(iname.length+1)):
-            (path===iname?v:_get(s,path));
-          n.textContent=val!==undefined?String(val):'';
-        });
-        c.appendChild(clone);
-      });
-    });
-    // @var (outside @each — loop items are resolved by the @each pass above)
-    document.querySelectorAll('[data-xv]').forEach(function(el){
-      if(el.closest('[data-xe]'))return;
-      var v=_get(s,el.dataset.xv);el.textContent=v!==undefined?String(v):'';
-    });
+  function init(d){Object.assign(s,d);_u();}
+  function push(k,v){var a=_get(s,k);if(!Array.isArray(a))a=[];a.push(v);set(k,a);}
+  function removeAt(k,i){var a=_get(s,k);if(Array.isArray(a)&&i>=0){a.splice(i,1);set(k,a);}}
+  function persist(k){
+    pk=k;
+    try{var d=localStorage.getItem(k);if(d)Object.assign(s,JSON.parse(d));}catch(e){}
+    _u();
   }
-  function _get(obj,path){
-    return path.split('.').reduce(function(o,k){return o&&o[k];},obj);
+  function load(u){
+    return fetch(u).then(function(r){return r.json();}).then(init);
   }
-  window.xvml={state:s,set:set,get:get,init:init};
+  window.xvml={state:s,set:set,get:get,init:init,push:push,removeAt:removeAt,persist:persist,load:load};
 })();
-window.xvml.init({"loggedIn":false,"count":0,"darkMode":false,"name":"Alex","user":{"role":"admin","active":true},"tags":["CLI","XVML","AI"]});</script>
+window.xvml.init({"loggedIn":false,"count":0,"darkMode":false,"name":"Alex","user":{"role":"admin","active":true},"tags":["CLI","XVML","AI"],"todos":["Ship v0.1.5","Write blog post"],"teams":[{"name":"Core","members":["Ann","Bo"]},{"name":"Ops","members":["Cy"]}],"notify":false,"team":"Alpha"});
+window.xvml.persist("xvml-dynamic-demo");</script>
 </body>
 </html>
