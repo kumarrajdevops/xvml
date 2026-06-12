@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { renderSource } from '../../../src/browser.js';
 
 // Injected into every preview: intercepts <a href> clicks and forwards them
@@ -93,21 +94,25 @@ class XvmlPreviewPanel {
   }
 
   private async navigateTo(href: string): Promise<void> {
-    // Use only the basename — strip any path prefix
-    const base = href.split('/').pop() ?? href;
-    const xvmlName = base.replace(/\.html$/, '.xvml');
+    // Use only the basename — strip any path prefix in the href
+    const base = (href.split('/').pop() ?? href).trim();
+    // Support .xvml hrefs directly and .html hrefs (convert to .xvml)
+    const xvmlName = base.endsWith('.xvml') ? base : base.replace(/\.html$/, '.xvml');
 
-    // 1. Look in the same directory as the file currently showing
+    // 1. Resolve as a sibling of the currently-shown file.
+    //    vscode.Uri.joinPath does NOT resolve "..", so use path.dirname instead.
     if (this.currentUri) {
-      const sibling = vscode.Uri.joinPath(this.currentUri, '..', xvmlName);
+      const sibling = vscode.Uri.file(
+        path.join(path.dirname(this.currentUri.fsPath), xvmlName),
+      );
       try {
         const doc = await vscode.workspace.openTextDocument(sibling);
         this.render(doc);
         return;
-      } catch { /* not found there, fall through */ }
+      } catch { /* file not there, fall through */ }
     }
 
-    // 2. Search the whole workspace (works when a folder is open)
+    // 2. Workspace-wide search (fallback when current file path is unknown)
     const found = await vscode.workspace.findFiles(`**/${xvmlName}`, '**/node_modules/**', 1);
     if (found.length > 0) {
       const doc = await vscode.workspace.openTextDocument(found[0]);
