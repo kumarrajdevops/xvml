@@ -1,19 +1,20 @@
 import * as vscode from 'vscode';
 import { renderSource } from '../../../src/browser.js';
 
-// Script injected into every preview: intercepts <a> clicks and posts a
-// navigate message back to the extension instead of following the href.
+// Injected into every preview: intercepts <a href> clicks and forwards them
+// to the extension host as a 'navigate' message instead of following the href.
 const NAV_SCRIPT = `<script>
 (function(){
-  var api = (typeof acquireVsCodeApi === 'function') ? acquireVsCodeApi() : null;
-  if (!api) return;
-  document.addEventListener('click', function(e) {
-    var a = e.target && e.target.closest('a');
-    if (!a) return;
-    var href = a.getAttribute('href');
-    if (!href || href === '#' || /^https?:\\/\\//.test(href)) return;
+  var api=(typeof acquireVsCodeApi==='function')?acquireVsCodeApi():null;
+  if(!api)return;
+  document.addEventListener('click',function(e){
+    var t=e.target;
+    var a=t&&(t.tagName==='A'?t:t.closest('a'));
+    if(!a)return;
+    var href=a.getAttribute('href');
+    if(!href||href==='#'||href.match(/^https?:\\/\\//))return;
     e.preventDefault();
-    api.postMessage({ type: 'navigate', href: href });
+    api.postMessage({type:'navigate',href:href});
   });
 })();
 </script>`;
@@ -29,14 +30,12 @@ export function activate(context: vscode.ExtensionContext): void {
   });
   context.subscriptions.push(cmd);
 
-  // Update on save
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(doc => {
       if (doc.languageId === 'xvml') XvmlPreviewPanel.update(doc);
     }),
   );
 
-  // Update on change (debounced 400 ms) so the preview stays live while typing
   let debounce: ReturnType<typeof setTimeout> | undefined;
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument(e => {
@@ -52,6 +51,8 @@ class XvmlPreviewPanel {
 
   private readonly panel: vscode.WebviewPanel;
   private readonly disposables: vscode.Disposable[] = [];
+  // Track the URI of the file currently shown so relative links resolve correctly
+  private currentUri: vscode.Uri | undefined;
 
   static createOrShow(doc: vscode.TextDocument): void {
     if (XvmlPreviewPanel.current) {
@@ -76,58 +77,56 @@ class XvmlPreviewPanel {
     this.panel = panel;
     this.render(doc);
 
-    // Handle navigate messages from the WebView (link clicks in the preview)
     panel.webview.onDidReceiveMessage(
       async (msg: { type: string; href: string }) => {
-        if (msg.type !== 'navigate') return;
-        await this.navigateTo(msg.href);
+        if (msg.type === 'navigate') await this.navigateTo(msg.href);
       },
       null,
       this.disposables,
     );
 
     panel.onDidDispose(
-      () => {
-        XvmlPreviewPanel.current = undefined;
-        this.dispose();
-      },
+      () => { XvmlPreviewPanel.current = undefined; this.dispose(); },
       null,
       this.disposables,
     );
   }
 
-  // Resolve an href like "settings.html" → find settings.xvml in the workspace
-  // and re-render it in this panel.
   private async navigateTo(href: string): Promise<void> {
-    // Strip path separators — only the basename matters
+    // Use only the basename — strip any path prefix
     const base = href.split('/').pop() ?? href;
     const xvmlName = base.replace(/\.html$/, '.xvml');
 
-    const uris = await vscode.workspace.findFiles(
-      `**/${xvmlName}`,
-      '**/node_modules/**',
-      1,
-    );
+    // 1. Look in the same directory as the file currently showing
+    if (this.currentUri) {
+      const sibling = vscode.Uri.joinPath(this.currentUri, '..', xvmlName);
+      try {
+        const doc = await vscode.workspace.openTextDocument(sibling);
+        this.render(doc);
+        return;
+      } catch { /* not found there, fall through */ }
+    }
 
-    if (uris.length === 0) {
-      vscode.window.showWarningMessage(`XVML preview: cannot find ${xvmlName}`);
+    // 2. Search the whole workspace (works when a folder is open)
+    const found = await vscode.workspace.findFiles(`**/${xvmlName}`, '**/node_modules/**', 1);
+    if (found.length > 0) {
+      const doc = await vscode.workspace.openTextDocument(found[0]);
+      this.render(doc);
       return;
     }
 
-    const doc = await vscode.workspace.openTextDocument(uris[0]);
-    this.render(doc);
+    vscode.window.showWarningMessage(`XVML preview: cannot find ${xvmlName}`);
   }
 
   private render(doc: vscode.TextDocument): void {
-    this.panel.title = `Preview: ${doc.fileName.split('/').pop() ?? 'XVML'}`;
+    this.currentUri = doc.uri;
+    this.panel.title = `Preview ─ ${doc.fileName.split('/').pop() ?? 'xvml'}`;
     try {
       let html = renderSource(doc.getText());
-      // Allow the inline XVML reactive runtime
       const csp =
         `<meta http-equiv="Content-Security-Policy" ` +
         `content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">`;
       html = html.replace('<head>', `<head>\n${csp}`);
-      // Inject nav-intercept script just before </body>
       html = html.replace('</body>', `${NAV_SCRIPT}\n</body>`);
       this.panel.webview.html = html;
     } catch (err: unknown) {
@@ -148,10 +147,7 @@ function errorPage(message: string): string {
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';">
 <style>body{font-family:monospace;padding:1.5rem;background:#1e1e1e;color:#f48771}
 h2{margin:0 0 .5rem}pre{white-space:pre-wrap;word-break:break-word}</style>
-</head><body>
-<h2>XVML parse error</h2>
-<pre>${safe}</pre>
-</body></html>`;
+</head><body><h2>XVML parse error</h2><pre>${safe}</pre></body></html>`;
 }
 
 export function deactivate(): void {}
