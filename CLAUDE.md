@@ -81,7 +81,7 @@ src/
   renderer.ts   — AST → deterministic self-contained HTML
   browser.ts    — browser-safe renderSource (no fs/path deps, used by playground)
   styles.ts     — inlined CSS (light/dark/responsive)
-  runtime.ts    — reactive JS runtime string (~40 lines, embedded when dynamic commands used)
+  runtime.ts    — reactive JS runtime string (~5 KB, embedded when dynamic commands used)
   cli.ts        — commander CLI (render/build/check/ask/init)
   agent.ts      — Claude API integration for xvml ask
 bin/
@@ -90,6 +90,10 @@ examples/       — .xvml source files
 docs/           — rendered .html output (committed to repo)
 packages/
   playground/   — Vite web app: split-pane editor + live preview (xvml-lang.dev)
+  vscode-xvml/  — VS Code extension: TextMate grammar + live preview WebView
+                  (preview-html.ts is the pure/testable part; extension.ts wires vscode APIs;
+                   bump version in its package.json before npm run package — same-version
+                   vsix reinstalls are silently ignored by VS Code)
 XVML_SPEC.md    — formal specification for all @commands
 TODO.md         — v1.0.0 roadmap with checklist
 ```
@@ -102,6 +106,9 @@ TODO.md         — v1.0.0 roadmap with checklist
 - `@stat` value is first string, label is second: `@stat "99%" "Uptime"`
 - `@field` type keyword comes before label: `@field email "Email address"`
 - `@select` options are pipe-delimited: `@select "Team" "A | B | C"`
+- `@nav` items are pipe-separated, with optional URLs: `@nav Home=readme.html | Projects | Settings=settings.html`
+- `@link "Label" "url" [blank]` — `blank` opens in a new tab (`target="_blank"`)
 - `@if !<var>` negates the condition (show when falsy)
 - `@if ... @else ... @end` — two branches, exactly one visible
 - `@each item in collection` — `in` keyword separates item name from collection name
+- Action values can't contain spaces (`push:todos=New task` pushes only "New") — use single-word values

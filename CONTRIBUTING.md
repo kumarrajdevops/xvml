@@ -36,6 +36,23 @@ node dist/bin/xvml.js render examples/login.xvml
 node dist/bin/xvml.js ask "test page"
 ```
 
+## VS Code extension
+
+```bash
+cd packages/vscode-xvml
+npm install
+npm run typecheck       # tsc --noEmit (src/, tests excluded)
+npm run build           # esbuild bundle → dist/extension.js
+npm run package         # build + create xvml-<version>.vsix
+```
+
+- Bump `"version"` in `packages/vscode-xvml/package.json` before every `npm run package` —
+  installing a `.vsix` with an unchanged version can silently keep the old build
+- Install locally: `code --install-extension xvml-<version>.vsix --force`, then reload the window
+- Preview logic lives in `src/preview-html.ts` (pure, no `vscode` imports) so it stays unit-testable;
+  `src/extension.ts` only wires VS Code APIs. Tests are in `src/__tests__/preview.test.ts` and run
+  with the root `npm test`
+
 ## Adding a new @command
 
 1. Add command name to `KNOWN_COMMANDS` in `src/parser.ts`

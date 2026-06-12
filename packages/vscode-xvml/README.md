@@ -5,14 +5,16 @@ Syntax highlighting and live preview for [XVML](https://github.com/kumarrajdevop
 ## Features
 
 - **Syntax highlighting** for all XVML commands, strings, modifiers, `on:` event bindings, `bind:` attribute bindings, and `{path}` interpolation
-- **Live preview panel** — renders the current `.xvml` file to HTML as you type (debounced 400 ms) and on every save
+- **Live preview panel** — renders the current `.xvml` file to HTML as you type (debounced 400 ms), on save, and whenever the file changes on disk (git, CLI tools, AI agents)
+- **In-preview navigation** — clicking `@nav` / `@link` targets like `settings.html` or `settings.xvml` opens the matching `.xvml` file in the same preview panel; external `https://` links are left alone
+- **Reactive pages work** — `@if`/`@each`/`@bind`/`on:click` run live inside the preview (scripts are nonce-tagged to satisfy the WebView CSP)
 - **Parse error display** — shows the error message in the preview pane instead of crashing
 
 ## Usage
 
 1. Open any `.xvml` file
 2. Click the **Open Preview** button (eye icon) in the editor title bar, or run `XVML: Open Preview` from the Command Palette (`⇧⌘P`)
-3. The preview opens side-by-side and updates as you edit
+3. The preview opens side-by-side and updates as you edit; click nav links to move between pages
 
 ## XVML syntax quick reference
 
@@ -75,7 +77,21 @@ Use [semver](https://semver.org): patch for fixes, minor for new features.
 ### Install locally without publishing
 
 ```bash
-code --install-extension packages/vscode-xvml/xvml-0.1.5.vsix
+cd packages/vscode-xvml
+npm run package                                # builds xvml-<version>.vsix
+code --install-extension xvml-*.vsix --force   # --force replaces the installed copy
 ```
 
-Replace `0.1.5` with the version in `package.json` after any rebuild.
+> **Always bump the version in `package.json` before repackaging** — VS Code can
+> silently keep the previously-installed build when the version number is unchanged.
+> After installing, reload the window (`⇧⌘P` → `Developer: Reload Window`).
+
+### Run the tests
+
+The preview logic (`src/preview-html.ts`) is pure and covered by vitest tests in
+`src/__tests__/preview.test.ts`. They run as part of the root suite:
+
+```bash
+cd ../..   # repo root
+npm test
+```
