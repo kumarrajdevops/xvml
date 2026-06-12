@@ -26,6 +26,7 @@
     @item "Measured the real pages: raw HTML bytes, tag counts, external asset dependencies"
     @item "Recreated each page in XVML, hand-written HTML (fair: minimal, semantic, inline CSS), and Markdown — using the real fetched content (actual story titles, points, authors)"
     @item "Rendered the XVML versions with xvml render; all six artifacts measured with wc"
+    @item "Counted LLM tokens for every artifact with gpt-tokenizer (cl100k_base) — a standard, reproducible proxy; Claude's tokenizer differs slightly but preserves the ratios"
     @item "Scored capability coverage and per-use-case confidence from the measured evidence"
   @end
 @end
@@ -212,6 +213,30 @@ Password: ____________
 @end
 
 @divider "Overall analysis"
+
+@card "Token utilization (LLM cost of each format)"
+  @text "Tokens are the unit of cost, latency, and context budget when an AI writes or edits a page. Measured with cl100k_base on the exact artifacts above:" muted
+  @table bordered
+    @row "Artifact" "XVML" "HTML" "Markdown"
+    @row "HN front page — source" "323 tokens" "683 tokens" "218 tokens"
+    @row "Login page — source" "120 tokens" "832 tokens" "123 tokens (non-functional)"
+    @row "Rendered output (HN / login)" "7,228 / 5,556" "source is the output" "n/a"
+    @row "Real production page (HN / GitHub login)" "—" "11,868 / 14,321 tokens" "—"
+  @end
+  @stats
+    @stat "6.9×" "fewer output tokens than HTML (login)" up
+    @stat "119×" "fewer than the real GitHub login page" up
+    @stat "2.1×" "fewer than HTML (HN page)" up
+    @stat "46×" "cheaper round-trip edits vs rendered HTML" up
+  @end
+  @list unordered
+    @item "Generation: an LLM producing the login page emits 120 tokens of XVML vs 832 of equivalent HTML — ~7× less output means ~7× lower cost and latency per page, since output tokens are billed at a premium and stream serially"
+    @item "Editing: to change a page the model must re-read it. Keeping XVML as the source of truth costs 120–323 tokens of context per page; using rendered HTML as the source costs 5,556–7,228 — a 17–46× context tax"
+    @item "Markdown is token-competitive with XVML on pure content (218 vs 323) but cannot express the form scenario at any token count"
+    @item "Error surface scales with output length: 120 constrained-grammar tokens validated by xvml check is a far smaller space for hallucination than 832+ tokens of free-form HTML"
+  @end
+  @text "This is why xvml ask works reliably at temperature 0: the model writes the short, constrained representation, and the deterministic renderer expands it into the long one." muted
+@end
 
 @card "Capability matrix"
   @table striped
