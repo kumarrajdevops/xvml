@@ -34,6 +34,14 @@ function cls(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(' ');
 }
 
+// Authors link source-to-source (@nav Home=readme.xvml); rendered pages must
+// link output-to-output. Local *.xvml hrefs become *.html at render time;
+// external URLs pass through untouched.
+function hrefOut(href: string): string {
+  if (/^https?:\/\//.test(href)) return href;
+  return href.replace(/\.xvml$/, '.html');
+}
+
 function nextId(state: RenderState, prefix: string): string {
   return `xvml-${prefix}-${state.idCounter.n++}`;
 }
@@ -262,7 +270,7 @@ function renderNav(node: XvmlNode): string {
     .filter(a => a.value !== '|')
     .map(a => {
       if (a.type === 'keyvalue') {
-        return `<li><a class="xvml-nav__link" href="${esc(a.value)}">${esc(a.key)}</a></li>`;
+        return `<li><a class="xvml-nav__link" href="${esc(hrefOut(a.value))}">${esc(a.key)}</a></li>`;
       }
       const label = String(a.value);
       return `<li><a class="xvml-nav__link" href="#">${esc(label)}</a></li>`;
@@ -487,7 +495,7 @@ function renderSelect(node: XvmlNode, state: RenderState): string {
 
 function renderLink(node: XvmlNode): string {
   const label = nthStr(node.args, 0);
-  const href = nthStr(node.args, 1, '#');
+  const href = hrefOut(nthStr(node.args, 1, '#'));
   const blank = hasKw(node.args, 'blank');
   const onClickAttr = eventAttr(node, 'click');
   return `<a class="xvml-link" href="${esc(href)}"${blank ? ' target="_blank" rel="noreferrer"' : ''}${onClickAttr}>${esc(label)}</a>`;

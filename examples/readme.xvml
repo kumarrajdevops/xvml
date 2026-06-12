@@ -3,7 +3,7 @@
 @meta "description" "XVML — eXpressive Visual Markup Language CLI renderer. Official documentation."
 
 @page "@xvml/cli"
-@nav Home=readme.html | Dashboard=dashboard.html | Demo=dynamic-demo.html | Settings=settings.html
+@nav Home=readme.xvml | Dashboard=dashboard.xvml | Demo=dynamic-demo.xvml | Settings=settings.xvml
 
 @card
   @cols 2
@@ -256,12 +256,12 @@ code --install-extension xvml-*.vsix --force
     @row "dynamic-demo.html" "dynamic-demo.xvml" "Reactive page: conditions, actions, editable lists, persistence"
   @end
   @layout inline
-  @link "login.html" "login.html" blank
-  @link "dashboard.html" "dashboard.html" blank
-  @link "profile.html" "profile.html" blank
-  @link "settings.html" "settings.html" blank
-  @link "noc-dashboard.html" "noc-dashboard.html" blank
-  @link "dynamic-demo.html" "dynamic-demo.html" blank
+  @link "login.html" "login.xvml" blank
+  @link "dashboard.html" "dashboard.xvml" blank
+  @link "profile.html" "profile.xvml" blank
+  @link "settings.html" "settings.xvml" blank
+  @link "noc-dashboard.html" "noc-dashboard.xvml" blank
+  @link "dynamic-demo.html" "dynamic-demo.xvml" blank
 @end
 
 @card "Links"

@@ -51,11 +51,14 @@ describe('buildPreviewHtml', () => {
     expect(html.indexOf('acquireVsCodeApi')).toBeLessThan(html.indexOf('</body>'));
   });
 
-  it('renders nav links with their raw hrefs', () => {
+  it('renders nav links as .html hrefs (renderer converts .xvml sources)', () => {
+    // The renderer rewrites source-style .xvml hrefs to .html output links;
+    // navigateTo maps them back to .xvml via resolveNavFileName.
     const html = buildPreviewHtml(STATIC_SRC, NONCE);
-    expect(html).toContain('href="readme.xvml"');
-    expect(html).toContain('href="noc-dashboard.xvml"');
-    expect(html).toContain('href="settings.xvml"');
+    expect(html).toContain('href="readme.html"');
+    expect(html).toContain('href="noc-dashboard.html"');
+    expect(html).toContain('href="settings.html"');
+    expect(resolveNavFileName('noc-dashboard.html')).toBe('noc-dashboard.xvml');
   });
 });
 

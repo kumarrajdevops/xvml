@@ -100,5 +100,5 @@
   @link "Grafana Dashboards" "https://grafana.internal" blank
 @end
 @card
-  @link "← Back to docs" "readme.html"
+  @link "← Back to docs" "dashboard.xvml" blank
 @end

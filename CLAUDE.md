@@ -106,8 +106,10 @@ TODO.md         — v1.0.0 roadmap with checklist
 - `@stat` value is first string, label is second: `@stat "99%" "Uptime"`
 - `@field` type keyword comes before label: `@field email "Email address"`
 - `@select` options are pipe-delimited: `@select "Team" "A | B | C"`
-- `@nav` items are pipe-separated, with optional URLs: `@nav Home=readme.html | Projects | Settings=settings.html`
+- `@nav` items are pipe-separated, with optional URLs: `@nav Home=readme.xvml | Projects | Settings=settings.xvml`
 - `@link "Label" "url" [blank]` — `blank` opens in a new tab (`target="_blank"`)
+- Link pages source-to-source (`.xvml` hrefs) — the renderer rewrites local `*.xvml` hrefs to `*.html`
+  in output, so authors iterate in the VS Code preview and render once at the end
 - `@if !<var>` negates the condition (show when falsy)
 - `@if ... @else ... @end` — two branches, exactly one visible
 - `@each item in collection` — `in` keyword separates item name from collection name

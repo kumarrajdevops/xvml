@@ -550,6 +550,62 @@ An anchor element.
 **Example:**
 ```
 @link "View documentation" "https://docs.example.com" blank
+@link "← Back" "dashboard.xvml"
+```
+
+**Source-to-source linking:** local hrefs ending in `.xvml` are rewritten to `.html`
+at render time (`"dashboard.xvml"` → `href="dashboard.html"`). Author links against
+source files; rendered pages link rendered outputs. External `http(s)` URLs are never
+rewritten. The same rule applies to `@nav` item URLs.
+
+---
+
+#### `@nav`
+
+A horizontal navigation bar. Items are bare keywords separated by `|`; an item may
+carry a URL as `key=value`. Items without a URL render with `href="#"`.
+
+**Syntax:**
+```
+@nav Item1[=url] | Item2[=url] | ...
+```
+
+**HTML output:**
+```html
+<nav class="xvml-nav">
+  <ul class="xvml-nav__links">
+    <li><a class="xvml-nav__link" href="readme.html">Home</a></li>
+    <li><a class="xvml-nav__link" href="#">Projects</a></li>
+  </ul>
+</nav>
+```
+
+**Example:**
+```
+@nav Home=readme.xvml | Projects | Settings=settings.xvml
+```
+
+Local `*.xvml` URLs are rewritten to `*.html` at render time (see `@link`).
+
+---
+
+#### `@avatar`
+
+A circular badge displaying user initials.
+
+**Syntax:**
+```
+@avatar "Initials"
+```
+
+**HTML output:**
+```html
+<div class="xvml-avatar">KS</div>
+```
+
+**Example:**
+```
+@avatar "KS"
 ```
 
 ---

@@ -211,6 +211,26 @@ describe('renderer — layout commands', () => {
     expect(html).toContain('xvml-avatar');
     expect(html).toContain('KS');
   });
+
+  it('@nav rewrites local .xvml hrefs to .html in output', async () => {
+    const html = await render('@page test\n@nav Home=readme.xvml | Settings=settings.xvml\n@card\n  @text "Hi"\n@end');
+    expect(html).toContain('href="readme.html"');
+    expect(html).toContain('href="settings.html"');
+    expect(html).not.toContain('.xvml"');
+  });
+
+  it('@link rewrites local .xvml hrefs to .html in output', async () => {
+    const html = await render('@page test\n@card\n  @link "Back" "dashboard.xvml"\n@end');
+    expect(html).toContain('href="dashboard.html"');
+  });
+
+  it('@nav/@link leave .html and external hrefs untouched', async () => {
+    const html = await render(
+      '@page test\n@nav Home=readme.html\n@card\n  @link "npm" "https://npmjs.com/package/x.xvml" blank\n@end',
+    );
+    expect(html).toContain('href="readme.html"');
+    expect(html).toContain('href="https://npmjs.com/package/x.xvml"');
+  });
 });
 
 describe('renderer — codeblock', () => {

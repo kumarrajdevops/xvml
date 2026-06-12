@@ -1,5 +1,5 @@
 @page dashboard
-@nav Home=readme.html | Projects=noc-dashboard.html | Settings=settings.html
+@nav Home=readme.xvml | Projects=noc-dashboard.xvml | Settings=settings.xvml
 @stats
   @stat "1,240" "Total users"
   @stat "98%" "Uptime"
@@ -12,5 +12,17 @@
 @end
 
 @card
-  @link "← Back to docs" "readme.html"
+  @title "Welcome again"
+  @subtitle "Sign in to your account"
+  @field email "Email address"
+  @field password "Password" secret
+  @checkbox "Remember me"
+  @button "Sign in" primary
+  @divider "or"
+  @button "Continue with Google" secondary
+  @link "Don't have an account? Sign up"
+@end
+
+@card
+  @link "← Back to docs" "dashboard.xvml" blank
 @end
