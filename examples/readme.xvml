@@ -256,12 +256,12 @@ code --install-extension xvml-*.vsix --force
     @row "dynamic-demo.html" "dynamic-demo.xvml" "Reactive page: conditions, actions, editable lists, persistence"
   @end
   @layout inline
-  @link "login.html" "login.xvml" blank
-  @link "dashboard.html" "dashboard.xvml" blank
-  @link "profile.html" "profile.xvml" blank
-  @link "settings.html" "settings.xvml" blank
-  @link "noc-dashboard.html" "noc-dashboard.xvml" blank
-  @link "dynamic-demo.html" "dynamic-demo.xvml" blank
+  @link "Login page" "login.xvml" blank
+  @link "Dashboard" "dashboard.xvml" blank
+  @link "Profile" "profile.xvml" blank
+  @link "Settings" "settings.xvml" blank
+  @link "NOC dashboard" "noc-dashboard.xvml" blank
+  @link "Dynamic demo" "dynamic-demo.xvml" blank
 @end
 
 @card "Links"
