@@ -3,6 +3,7 @@
 @meta "description" "XVML — eXpressive Visual Markup Language CLI renderer. Official documentation."
 
 @page "@xvml/cli"
+@nav Home=readme.html | Dashboard=dashboard.html | Demo=dynamic-demo.html | Settings=settings.html
 
 @card
   @cols 2
@@ -11,8 +12,8 @@
       @subtitle "Write plain text. Render live UI."
       @text "XVML sits between Markdown and HTML — as readable as Markdown, as structured as HTML. The CLI compiles .xvml files into fully self-contained, deterministic HTML — static or reactive." muted
       @layout inline
-      @badge "v0.1.3" info
-      @badge "MIT" neutral
+      @badge "v0.1.5" info
+      @badge "ISC" neutral
       @badge "Node ≥ 18" neutral
     @end
     @section "Core guarantees"
@@ -23,7 +24,8 @@
         @item "Single output file per source file — zero dependencies at runtime"
         @item "Works offline once installed"
         @item "Claude AI integration via xvml ask"
-        @item "Reactive pages via @if, @each, @bind — no framework needed"
+        @item "Reactive pages via @if, @each, @bind, on:click — no framework needed"
+        @item "VS Code extension — syntax highlighting + live preview"
       @end
     @end
   @end
@@ -91,46 +93,54 @@ xvml ask "dashboard" --model claude-opus-4-8
   @alert info "Temperature 0 means the same task description always generates the same XVML."
 @end
 
-@card "Dynamic pages — @if, @each, @bind"
-  @subtitle "Add reactivity without a framework. A 40-line JS runtime is embedded only when needed."
+@card "Dynamic pages — @if, @each, @bind, on:click"
+  @subtitle "Add reactivity without a framework. A ~5 KB JS runtime is embedded only when needed."
   @codeblock xvml
 @spec 1
 @page "Dynamic demo" light
+@persist "my-app"
 
 @data
-{ "name": "Alex", "loggedIn": true, "tags": ["CLI", "XVML", "AI"] }
+{ "name": "Alex", "count": 0, "todos": ["Ship it"], "user": { "active": true } }
 # close @data with @@end
 
-@card "Welcome"
-  @var name
+@card "Conditions and actions"
+  @if count > 0
+    @badge "positive" success
+  @else
+    @badge "zero" neutral
+  @end
+  @button "Set to 10" primary on:click=count=10
+  @button "Toggle" ghost on:click=toggle:user.active
+@end
+
+@card "Editable list"
+  @each todo in todos
+    @bind todo "Todo" text
+    @button "✕" sm ghost on:click=remove:todos:{todo__index}
+  @end
+  @button "Add" secondary on:click=push:todos=New
+@end
+
+@card "Two-way binding"
   @bind name "Your name" text
-@end
-
-@card "Conditional"
-  @if loggedIn
-    @alert "You are logged in" success
-  @end
-  @if !loggedIn
-    @button "Sign in" primary
-  @end
-@end
-
-@card "Loop"
-  @each tag in tags
-    @badge tag neutral
-  @end
+  @text "Hello {name}"
+  @button "Members only" primary bind:disabled=!user.active
 @end
   @@end
   @cols 2
     @section "Dynamic commands"
       @table compact
         @row "Command" "What it does"
-        @row "@data ... @@end" "Define initial state as JSON"
-        @row "@if <var>" "Show block when state.var is truthy"
-        @row "@if !<var>" "Show block when state.var is falsy"
-        @row "@each item in collection" "Loop template over state array"
-        @row "@bind <var> \"label\"" "Two-way bound input field"
-        @row "@var <key>" "Render state value inline"
+        @row "@data ... @@end" "Define initial state as JSON (or @data src=/state.json to fetch)"
+        @row "@persist \"key\"" "Save state to localStorage — survives reloads"
+        @row "@if <cond> / @else" "Conditions: key, !key, count > 0, role == \"admin\""
+        @row "@each item in collection" "Loop template — nestable, item-scoped collections work"
+        @row "@bind <var> \"label\" [type]" "Two-way input: text, number, checkbox, select \"A | B\""
+        @row "@var <key>" "Render state value inline — dot paths supported"
+        @row "on:click=<action>" "key=value, toggle:key, push:key=value, remove:key:{i}, fn:name"
+        @row "bind:<attr>=<path>" "Bind any HTML attribute to state: bind:disabled=!loggedIn"
+        @row "\"Hello {name}\"" "{path} interpolation in any string argument"
       @end
     @end
     @section "Browser console API"
@@ -138,10 +148,27 @@ xvml ask "dashboard" --model claude-opus-4-8
         @item "xvml.state — view current state"
         @item "xvml.set('key', value) — update and re-render"
         @item "xvml.get('key') — read a value"
-        @item "xvml.init(obj) — set initial state"
+        @item "xvml.push('key', v) / xvml.removeAt('key', i) — array ops"
+        @item "xvml.persist('key') — sync state to localStorage"
+        @item "xvml.load(url) — overlay state from remote JSON"
       @end
     @end
   @end
+@end
+
+@card "VS Code extension"
+  @subtitle "Syntax highlighting + live preview panel for .xvml files"
+  @list check
+    @item "Highlights all @commands, strings, {path} interpolation, on:/bind: attributes"
+    @item "Open Preview renders the file side-by-side, updating as you type"
+    @item "Nav links navigate between .xvml files inside the preview panel"
+    @item "Preview refreshes when files change on disk — git, CLI, AI agents"
+  @end
+  @codeblock bash
+cd packages/vscode-xvml
+npm install && npm run package
+code --install-extension xvml-*.vsix --force
+  @@end
 @end
 
 @card "Why XVML?"
@@ -187,7 +214,7 @@ xvml ask "dashboard" --model claude-opus-4-8
         @item "@stats ... @end"
         @item "@table ... @end"
         @item "@list ... @end"
-        @item "@if ... @end"
+        @item "@if ... @else ... @end"
         @item "@each ... @end"
         @item "@codeblock ... @@end"
         @item "@data ... @@end"
@@ -226,6 +253,7 @@ xvml ask "dashboard" --model claude-opus-4-8
     @row "profile.html" "profile.xvml" "User profile card with avatar and stats"
     @row "settings.html" "settings.xvml" "Settings form with sections and toggles"
     @row "noc-dashboard.html" "noc-dashboard.xvml" "Network operations center with service health"
+    @row "dynamic-demo.html" "dynamic-demo.xvml" "Reactive page: conditions, actions, editable lists, persistence"
   @end
   @layout inline
   @link "login.html" "login.html" blank
@@ -233,6 +261,7 @@ xvml ask "dashboard" --model claude-opus-4-8
   @link "profile.html" "profile.html" blank
   @link "settings.html" "settings.html" blank
   @link "noc-dashboard.html" "noc-dashboard.html" blank
+  @link "dynamic-demo.html" "dynamic-demo.html" blank
 @end
 
 @card "Links"
