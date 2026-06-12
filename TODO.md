@@ -1,5 +1,28 @@
 # XVML — Roadmap to v1.0.0
 
+## Status (2026-06-13)
+
+Shipped and live:
+- **npm**: `@xvml/cli` v0.1.6 — includes the `.xvml` → `.html` href rewrite, so the
+  GitHub Action now renders correct links (this was the cause of the push conflicts)
+- **VS Code extension**: v0.1.7 built + installed locally (`packages/vscode-xvml/`) —
+  syntax highlighting, live preview, in-preview nav, disk-change refresh
+- **Analysis report**: `docs/format-analysis.html` — XVML vs HTML vs Markdown benchmarked
+  against real HN / GitHub pages, incl. token utilization (login: 120 tokens XVML vs
+  832 HTML vs 14,321 real page)
+- 139 tests passing; all docs (README, CLAUDE.md, spec, readme.xvml) in sync
+
+## Next session — pending tasks
+
+- [ ] **Milestone 7: MCP adapter** (last engineering milestone — see below)
+- [ ] Publish VS Code extension to Marketplace (`cd packages/vscode-xvml && npm run publish` — steps in its README)
+- [ ] Deploy playground on Vercel (`vercel` in `packages/playground/`)
+- [ ] Register xvml-lang.dev domain + point DNS
+- [ ] Publish blog post on Dev.to (content ready in `docs/blog-devto.md`)
+
+Reminder: bump `version` in `packages/vscode-xvml/package.json` before every
+`npm run package` — same-version `.vsix` installs are silently ignored by VS Code.
+
 ## Milestones
 
 - [x] **1. GitHub Action** — auto-render on push of any `.xvml` file → commit HTML to `/docs`
