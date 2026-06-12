@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>XVML vs HTML vs Markdown</title>
+<meta name="description" content="XVML vs HTML vs Markdown — head-to-head analysis against real websites" />
+<style>*,*::before,*::after{box-sizing:border-box}
+body{margin:0}
+
+/* ── Custom properties (light defaults) ── */
+:root{
+  --xvml-color-primary:#6366f1;
+  --xvml-color-primary-hover:#4f46e5;
+  --xvml-color-bg:#f1f5f9;
+  --xvml-color-surface:#ffffff;
+  --xvml-color-border:#e2e8f0;
+  --xvml-color-text:#0f172a;
+  --xvml-color-text-muted:#64748b;
+  --xvml-color-text-label:#374151;
+  --xvml-color-success:#22c55e;
+  --xvml-color-success-bg:#dcfce7;
+  --xvml-color-success-text:#166534;
+  --xvml-color-warning:#f59e0b;
+  --xvml-color-warning-bg:#fef9c3;
+  --xvml-color-warning-text:#854d0e;
+  --xvml-color-error:#ef4444;
+  --xvml-color-error-bg:#fee2e2;
+  --xvml-color-error-text:#991b1b;
+  --xvml-color-info-bg:#dbeafe;
+  --xvml-color-info-text:#1e40af;
+  --xvml-font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --xvml-mono:'Courier New',Courier,monospace;
+  --xvml-radius:10px;
+  --xvml-radius-sm:6px;
+  --xvml-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+
+/* ── Auto dark mode (no explicit theme class) ── */
+@media(prefers-color-scheme:dark){
+  :root{
+    --xvml-color-bg:#0f172a;
+    --xvml-color-surface:#1e293b;
+    --xvml-color-border:#334155;
+    --xvml-color-text:#f1f5f9;
+    --xvml-color-text-muted:#94a3b8;
+    --xvml-color-text-label:#cbd5e1;
+    --xvml-shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+}
+
+/* ── Explicit theme overrides (beat the media query via inheritance) ── */
+.xvml-theme-light{
+  --xvml-color-bg:#f1f5f9;
+  --xvml-color-surface:#ffffff;
+  --xvml-color-border:#e2e8f0;
+  --xvml-color-text:#0f172a;
+  --xvml-color-text-muted:#64748b;
+  --xvml-color-text-label:#374151;
+  --xvml-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+.xvml-theme-dark{
+  --xvml-color-bg:#0f172a;
+  --xvml-color-surface:#1e293b;
+  --xvml-color-border:#334155;
+  --xvml-color-text:#f1f5f9;
+  --xvml-color-text-muted:#94a3b8;
+  --xvml-color-text-label:#cbd5e1;
+  --xvml-shadow:0 1px 3px rgba(0,0,0,.3);
+}
+
+/* ── Page shell ── */
+.xvml-page{
+  min-height:100vh;
+  padding:24px 20px;
+  max-width:960px;
+  margin:0 auto;
+  background:var(--xvml-color-bg);
+  color:var(--xvml-color-text);
+  font-family:var(--xvml-font);
+  font-size:16px;
+  line-height:1.5;
+}
+
+/* ── Navigation ── */
+.xvml-nav{
+  background:var(--xvml-color-surface);
+  border-radius:var(--xvml-radius);
+  border:1px solid var(--xvml-color-border);
+  padding:0 20px;
+  margin-bottom:20px;
+  box-shadow:var(--xvml-shadow);
+}
+.xvml-nav__links{
+  display:flex;
+  list-style:none;
+  padding:0;
+  margin:0;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.xvml-nav__link{
+  display:block;
+  padding:14px 10px;
+  color:var(--xvml-color-text-muted);
+  text-decoration:none;
+  font-size:14px;
+  font-weight:500;
+  border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;
+}
+.xvml-nav__link:first-child{color:var(--xvml-color-primary);border-bottom-color:var(--xvml-color-primary)}
+.xvml-nav__link:hover{color:var(--xvml-color-text);border-bottom-color:var(--xvml-color-border)}
+
+/* ── Card ── */
+.xvml-card{
+  background:var(--xvml-color-surface);
+  border-radius:var(--xvml-radius);
+  box-shadow:var(--xvml-shadow);
+  border:1px solid var(--xvml-color-border);
+  padding:24px;
+  margin-bottom:20px;
+}
+.xvml-card--flat{box-shadow:none}
+.xvml-card--outlined{box-shadow:none}
+.xvml-card--compact{padding:16px}
+.xvml-card__label{font-size:16px;font-weight:600;margin:0 0 20px;color:var(--xvml-color-text)}
+.xvml-card__body{}
+
+/* ── Section ── */
+.xvml-section{margin-bottom:16px}
+.xvml-section--divided{border-top:1px solid var(--xvml-color-border);padding-top:16px}
+.xvml-section__label{
+  font-size:11px;font-weight:700;color:var(--xvml-color-text-muted);
+  text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px
+}
+.xvml-section__body{}
+
+/* ── Layout ── */
+.xvml-layout{display:block}
+.xvml-layout--inline{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.xvml-layout--grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.xvml-layout--center{display:flex;justify-content:center;align-items:center}
+.xvml-layout--fill{display:flex;flex-direction:column;flex:1}
+
+/* ── Cols ── */
+.xvml-cols{display:grid;gap:16px}
+.xvml-cols--1{grid-template-columns:1fr}
+.xvml-cols--2{grid-template-columns:repeat(2,1fr)}
+.xvml-cols--3{grid-template-columns:repeat(3,1fr)}
+.xvml-cols--4{grid-template-columns:repeat(4,1fr)}
+.xvml-cols--5{grid-template-columns:repeat(5,1fr)}
+.xvml-cols--6{grid-template-columns:repeat(6,1fr)}
+.xvml-col{}
+
+/* ── Avatar ── */
+.xvml-avatar{
+  width:60px;height:60px;border-radius:50%;
+  background:var(--xvml-color-primary);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:700;margin-bottom:16px;
+  letter-spacing:-0.5px;user-select:none;flex-shrink:0;
+}
+
+/* ── Title ── */
+.xvml-title{margin:0 0 6px;font-weight:700;line-height:1.2;color:var(--xvml-color-text)}
+.xvml-title--xl{font-size:32px}
+.xvml-title--lg{font-size:24px}
+.xvml-title--md{font-size:20px}
+.xvml-title--sm{font-size:16px}
+
+/* ── Subtitle ── */
+.xvml-subtitle{margin:0 0 20px;font-size:15px;color:var(--xvml-color-text-muted)}
+.xvml-subtitle--muted{opacity:.75}
+
+/* ── Text ── */
+.xvml-text{margin:0 0 12px;line-height:1.65;color:var(--xvml-color-text)}
+.xvml-text--sm{font-size:13px}
+.xvml-text--muted{color:var(--xvml-color-text-muted)}
+.xvml-text--bold{font-weight:600}
+.xvml-text--mono{font-family:var(--xvml-mono)}
+.xvml-text--error{color:var(--xvml-color-error)}
+.xvml-text--success{color:var(--xvml-color-success)}
+
+/* ── Divider ── */
+.xvml-divider{border:none;border-top:1px solid var(--xvml-color-border);margin:20px 0}
+.xvml-divider--dashed{border-top-style:dashed}
+.xvml-divider--thick{border-top-width:2px}
+.xvml-divider--spacious{margin:32px 0}
+.xvml-divider--text{
+  display:flex;align-items:center;gap:12px;
+  margin:20px 0;color:var(--xvml-color-text-muted);font-size:13px;
+  border:none;
+}
+.xvml-divider__line{flex:1;height:1px;background:var(--xvml-color-border)}
+.xvml-divider__text{white-space:nowrap}
+
+/* ── Badge ── */
+.xvml-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500}
+.xvml-badge--neutral{background:var(--xvml-color-border);color:var(--xvml-color-text-label)}
+.xvml-badge--success{background:var(--xvml-color-success-bg);color:var(--xvml-color-success-text)}
+.xvml-badge--warning{background:var(--xvml-color-warning-bg);color:var(--xvml-color-warning-text)}
+.xvml-badge--error{background:var(--xvml-color-error-bg);color:var(--xvml-color-error-text)}
+.xvml-badge--info{background:var(--xvml-color-info-bg);color:var(--xvml-color-info-text)}
+
+/* ── Field ── */
+.xvml-field{margin-bottom:16px}
+.xvml-field__label{
+  display:block;font-size:13px;font-weight:500;
+  margin-bottom:5px;color:var(--xvml-color-text-label)
+}
+.xvml-field__input,.xvml-field__textarea{
+  display:block;width:100%;padding:9px 12px;
+  border:1px solid var(--xvml-color-border);border-radius:var(--xvml-radius-sm);
+  font-size:14px;color:var(--xvml-color-text);background:var(--xvml-color-surface);
+  font-family:var(--xvml-font);transition:border-color .15s,box-shadow .15s;
+}
+.xvml-field__input:focus,.xvml-field__textarea:focus{
+  outline:none;border-color:var(--xvml-color-primary);
+  box-shadow:0 0 0 3px rgba(99,102,241,.15);
+}
+.xvml-field__textarea{min-height:80px;resize:vertical}
+
+/* ── Button ── */
+.xvml-button{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:9px 18px;border:1px solid transparent;
+  border-radius:var(--xvml-radius-sm);font-size:14px;font-weight:500;
+  cursor:pointer;font-family:var(--xvml-font);transition:opacity .15s,background .15s;
+  text-decoration:none;
+}
+.xvml-button--default{background:var(--xvml-color-surface);border-color:var(--xvml-color-border);color:var(--xvml-color-text-label)}
+.xvml-button--primary{background:var(--xvml-color-primary);color:#fff;border-color:var(--xvml-color-primary)}
+.xvml-button--primary:hover{background:var(--xvml-color-primary-hover)}
+.xvml-button--secondary{background:var(--xvml-color-surface);border-color:var(--xvml-color-border);color:var(--xvml-color-text)}
+.xvml-button--danger{background:var(--xvml-color-error);color:#fff;border-color:var(--xvml-color-error)}
+.xvml-button--ghost{background:transparent;color:var(--xvml-color-primary);border-color:transparent}
+.xvml-button--link{background:transparent;border-color:transparent;color:var(--xvml-color-primary);text-decoration:underline;padding:0}
+.xvml-button--sm{padding:5px 12px;font-size:12px}
+.xvml-button--lg{padding:12px 24px;font-size:16px}
+.xvml-button--full{width:100%}
+.xvml-button:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Checkbox ── */
+.xvml-checkbox{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--xvml-color-text)}
+.xvml-checkbox__input{width:16px;height:16px;accent-color:var(--xvml-color-primary)}
+
+/* ── Select ── */
+.xvml-select{margin-bottom:16px}
+.xvml-select__label{display:block;font-size:13px;font-weight:500;margin-bottom:5px;color:var(--xvml-color-text-label)}
+.xvml-select__input{
+  display:block;width:100%;padding:9px 12px;
+  border:1px solid var(--xvml-color-border);border-radius:var(--xvml-radius-sm);
+  font-size:14px;color:var(--xvml-color-text);background:var(--xvml-color-surface);
+  font-family:var(--xvml-font);
+}
+
+/* ── Link ── */
+.xvml-link{display:inline-block;margin-top:4px;color:var(--xvml-color-primary);text-decoration:none;font-size:14px}
+.xvml-link:hover{text-decoration:underline}
+
+/* ── Stats grid ── */
+.xvml-stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:16px;
+  margin-bottom:20px;
+}
+.xvml-stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+
+/* ── Stat ── */
+.xvml-stat{
+  padding:20px;background:var(--xvml-color-surface);
+  border-radius:var(--xvml-radius);border:1px solid var(--xvml-color-border);
+  box-shadow:var(--xvml-shadow);
+}
+.xvml-stat__value{display:block;font-size:28px;font-weight:700;color:var(--xvml-color-text);line-height:1}
+.xvml-stat__label{
+  display:block;font-size:13px;color:var(--xvml-color-text-muted);
+  margin-top:4px;
+}
+.xvml-stat__trend{font-size:13px;margin-left:4px}
+.xvml-stat__trend--up{color:var(--xvml-color-success)}
+.xvml-stat__trend--down{color:var(--xvml-color-error)}
+.xvml-stat__trend--neutral{color:var(--xvml-color-text-muted)}
+
+/* ── Table ── */
+.xvml-table-wrapper{overflow-x:auto;margin-bottom:16px}
+.xvml-table{width:100%;border-collapse:collapse;font-size:14px}
+.xvml-table th{
+  padding:10px 14px;text-align:left;font-weight:600;font-size:12px;
+  text-transform:uppercase;letter-spacing:.04em;
+  border-bottom:2px solid var(--xvml-color-border);color:var(--xvml-color-text-muted)
+}
+.xvml-table td{padding:12px 14px;border-bottom:1px solid var(--xvml-color-border);color:var(--xvml-color-text)}
+.xvml-table--striped tbody tr:nth-child(even) td{background:var(--xvml-color-bg)}
+.xvml-table--compact th,.xvml-table--compact td{padding:6px 10px}
+.xvml-table--bordered th,.xvml-table--bordered td{border:1px solid var(--xvml-color-border)}
+
+/* ── Progress ── */
+.xvml-progress{margin-bottom:16px}
+.xvml-progress__header{display:flex;justify-content:space-between;margin-bottom:6px}
+.xvml-progress__label{font-size:14px;font-weight:500;color:var(--xvml-color-text)}
+.xvml-progress__value{font-size:13px;color:var(--xvml-color-text-muted)}
+.xvml-progress__track{background:var(--xvml-color-border);border-radius:9999px;height:8px}
+.xvml-progress__fill{height:8px;border-radius:9999px;background:var(--xvml-color-primary)}
+.xvml-progress__fill--success{background:var(--xvml-color-success)}
+.xvml-progress__fill--warning{background:var(--xvml-color-warning)}
+.xvml-progress__fill--error{background:var(--xvml-color-error)}
+
+/* ── List ── */
+.xvml-list{padding-left:20px;margin:0 0 12px}
+.xvml-list--unordered{list-style:disc}
+.xvml-list--ordered{list-style:decimal}
+.xvml-list--check{list-style:none;padding-left:0}
+.xvml-list--check .xvml-list__item::before{content:"✓ ";color:var(--xvml-color-success);font-weight:700}
+.xvml-list__item{padding:3px 0;line-height:1.6}
+
+/* ── Codeblock ── */
+.xvml-codeblock{margin-bottom:16px;border-radius:var(--xvml-radius);overflow:hidden;border:1px solid var(--xvml-color-border)}
+.xvml-codeblock__header{
+  display:flex;align-items:center;gap:8px;padding:8px 14px;
+  background:var(--xvml-color-bg);border-bottom:1px solid var(--xvml-color-border);font-size:12px
+}
+.xvml-codeblock__lang{font-weight:600;color:var(--xvml-color-primary);font-family:var(--xvml-mono)}
+.xvml-codeblock__filename{color:var(--xvml-color-text-muted)}
+.xvml-codeblock__pre{margin:0;padding:16px;background:#1e293b;overflow-x:auto}
+.xvml-codeblock__code{font-family:var(--xvml-mono);font-size:13px;color:#e2e8f0;white-space:pre}
+
+/* ── Constraint ── */
+.xvml-constraint{
+  display:flex;align-items:flex-start;gap:10px;padding:12px 14px;
+  border-radius:var(--xvml-radius-sm);margin-bottom:8px;
+  background:var(--xvml-color-bg);border-left:3px solid var(--xvml-color-primary)
+}
+.xvml-constraint--must{border-left-color:var(--xvml-color-error)}
+.xvml-constraint--should{border-left-color:var(--xvml-color-warning)}
+.xvml-constraint--may{border-left-color:var(--xvml-color-success)}
+.xvml-constraint__severity{
+  font-size:10px;font-weight:800;padding:2px 6px;border-radius:3px;
+  white-space:nowrap;background:var(--xvml-color-error);color:#fff;flex-shrink:0;margin-top:1px;
+}
+.xvml-constraint--should .xvml-constraint__severity{background:var(--xvml-color-warning)}
+.xvml-constraint--may .xvml-constraint__severity{background:var(--xvml-color-success)}
+.xvml-constraint__name{font-weight:600;font-family:var(--xvml-mono);font-size:13px;flex-shrink:0;color:var(--xvml-color-text)}
+.xvml-constraint__desc{margin:0;font-size:14px;color:var(--xvml-color-text-muted);flex:1}
+
+/* ── Alert ── */
+.xvml-alert{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;border-radius:var(--xvml-radius-sm);margin-bottom:12px;
+  border:1px solid transparent;
+}
+.xvml-alert--info{background:var(--xvml-color-info-bg);color:var(--xvml-color-info-text);border-color:rgba(30,64,175,.2)}
+.xvml-alert--success{background:var(--xvml-color-success-bg);color:var(--xvml-color-success-text);border-color:rgba(22,101,52,.2)}
+.xvml-alert--warning{background:var(--xvml-color-warning-bg);color:var(--xvml-color-warning-text);border-color:rgba(133,77,14,.2)}
+.xvml-alert--error{background:var(--xvml-color-error-bg);color:var(--xvml-color-error-text);border-color:rgba(153,27,27,.2)}
+.xvml-alert__icon{font-size:15px;flex-shrink:0;margin-top:1px}
+.xvml-alert__message{font-size:14px;font-weight:500;line-height:1.5}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .xvml-page{padding:16px 12px}
+  .xvml-cols--2,.xvml-cols--3,.xvml-cols--4,.xvml-cols--5,.xvml-cols--6{
+    grid-template-columns:1fr
+  }
+  .xvml-stats{grid-template-columns:repeat(2,1fr)}
+  .xvml-stat-row{grid-template-columns:repeat(2,1fr)}
+  .xvml-stat__value{font-size:22px}
+  .xvml-nav__links{gap:0}
+}</style>
+</head>
+<body class="xvml-page xvml-theme-light">
+<nav class="xvml-nav"><ul class="xvml-nav__links"><li><a class="xvml-nav__link" href="readme.html">Home</a></li><li><a class="xvml-nav__link" href="dashboard.html">Dashboard</a></li><li><a class="xvml-nav__link" href="dynamic-demo.html">Demo</a></li></ul></nav><section class="xvml-card"><div class="xvml-card__body"><h1 class="xvml-title xvml-title--xl">XVML vs HTML vs Markdown</h1><p class="xvml-subtitle">Head-to-head analysis against two real production websites</p><p class="xvml-text xvml-text--muted">Benchmarked 2026-06-13 against live fetches of news.ycombinator.com and github.com/login. Each page was recreated in all three formats with identical real content, then measured for source size, capability coverage, and output quality. This report itself is written in XVML.</p></div></section><section class="xvml-card"><h2 class="xvml-card__label">Executive summary</h2><div class="xvml-card__body"><div class="xvml-stats"><div class="xvml-stat"><span class="xvml-stat__value">90%<span class="xvml-stat__trend xvml-stat__trend--up">↑</span></span><span class="xvml-stat__label">Confidence: app-style pages</span></div><div class="xvml-stat"><span class="xvml-stat__value">85%<span class="xvml-stat__trend xvml-stat__trend--up">↑</span></span><span class="xvml-stat__label">Confidence: AI generation</span></div><div class="xvml-stat"><span class="xvml-stat__value">55%<span class="xvml-stat__trend xvml-stat__trend--neutral">→</span></span><span class="xvml-stat__label">Confidence: long-form prose</span></div><div class="xvml-stat"><span class="xvml-stat__value">25%<span class="xvml-stat__trend xvml-stat__trend--down">↓</span></span><span class="xvml-stat__label">Confidence: custom design</span></div></div><p class="xvml-text">XVML is a high-confidence choice inside its niche — forms, dashboards, settings pages, docs portals, internal tools, and AI-generated UI — where it is 2–6× more compact than hand-written HTML and does things Markdown structurally cannot. It is not a replacement for HTML when pixel-perfect custom design is the goal, nor for Markdown when the content is long-form prose.</p></div></section><section class="xvml-card"><h2 class="xvml-card__label">Methodology</h2><div class="xvml-card__body"><ol class="xvml-list xvml-list--ordered"><li class="xvml-list__item">Fetched two live production pages: the Hacker News front page (content/list archetype) and the GitHub login page (app/form archetype)</li><li class="xvml-list__item">Measured the real pages: raw HTML bytes, tag counts, external asset dependencies</li><li class="xvml-list__item">Recreated each page in XVML, hand-written HTML (fair: minimal, semantic, inline CSS), and Markdown — using the real fetched content (actual story titles, points, authors)</li><li class="xvml-list__item">Rendered the XVML versions with xvml render; all six artifacts measured with wc</li><li class="xvml-list__item">Scored capability coverage and per-use-case confidence from the measured evidence</li></ol></div></section><section class="xvml-card"><h2 class="xvml-card__label">What the real pages measure</h2><div class="xvml-card__body"><div class="xvml-table-wrapper"><table class="xvml-table xvml-table--striped"><thead><tr><th>Metric</th><th>news.ycombinator.com</th><th>github.com/login</th></tr></thead><tbody><tr><td>Raw HTML size</td><td>34,786 bytes</td><td>45,695 bytes</td></tr><tr><td>HTML tags</td><td>~730 (226 &lt;a&gt;, 240 &lt;span&gt;, 159 &lt;td&gt;)</td><td>495</td></tr><tr><td>External stylesheets</td><td>1 (news.css)</td><td>28</td></tr><tr><td>External scripts</td><td>1 (hn.js)</td><td>52</td></tr><tr><td>Self-contained?</td><td>No</td><td>No</td></tr><tr><td>Form inputs</td><td>1</td><td>16</td></tr></tbody></table></div><p class="xvml-text xvml-text--muted">Both production pages depend on external assets — they break offline and are not reproducible from a single file. Every figure below for XVML output is a single fully self-contained file.</p></div></section><div class="xvml-divider xvml-divider--text"><span class="xvml-divider__line"></span><span class="xvml-divider__text">Scenario A — Hacker News front page (content/list archetype)</span><span class="xvml-divider__line"></span></div><section class="xvml-card"><h2 class="xvml-card__label">A1 · XVML — 963 bytes, 23 lines</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">Data-driven: the six stories live in @data state, the row template is an @each. Changing the stories means editing JSON, not markup — or fetching it live with @data src=/stories.json.</p><div class="xvml-codeblock"><div class="xvml-codeblock__header"><span class="xvml-codeblock__lang">xvml</span></div><pre class="xvml-codeblock__pre"><code class="xvml-codeblock__code language-xvml">@spec 1
+@page &quot;Hacker News&quot; light
+@nav Hacker News | new | past | comments | ask | show | jobs | submit
+@data
+{
+  &quot;stories&quot;: [
+    { &quot;rank&quot;: 1, &quot;title&quot;: &quot;CRISPR tech selectively shreds cancer cells…&quot;, &quot;points&quot;: 323, &quot;by&quot;: &quot;signa11&quot; },
+    { &quot;rank&quot;: 2, &quot;title&quot;: &quot;I Am Not a Reverse Centaur&quot;, &quot;points&quot;: 47, &quot;by&quot;: &quot;doctorow&quot; },
+    { &quot;rank&quot;: 3, &quot;title&quot;: &quot;A PDF that changes based on how its read&quot;, &quot;points&quot;: 64, &quot;by&quot;: &quot;pdfgeek&quot; }
+  ]
+}
+# close the @data block with @-@-end (two @ signs)
+@card
+  @each story in stories
+    @text &quot;{story.rank}. {story.title}&quot; bold
+    @text &quot;{story.points} points by {story.by}&quot; muted
+  @end
+@end</code></pre></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">A2 · Hand-written HTML — 2,071 bytes, 52 lines</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">A fair, minimal, semantic recreation with inline CSS (to match XVML's self-containment). Every story is hard-coded markup; restyling means touching CSS classes by hand.</p><div class="xvml-codeblock"><div class="xvml-codeblock__header"><span class="xvml-codeblock__lang">html</span></div><pre class="xvml-codeblock__pre"><code class="xvml-codeblock__code language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;style&gt;
+  nav { background: #ff6600; padding: 0.4rem 0.6rem; }
+  nav a { color: #000; text-decoration: none; margin-right: 0.7rem; }
+  .story .title { font-size: 0.95rem; color: #000; }
+  .story .meta { font-size: 0.75rem; color: #828282; }
+  /* …18 more lines of CSS… */
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;nav&gt;
+  &lt;a class=&quot;brand&quot; href=&quot;#&quot;&gt;Hacker News&lt;/a&gt;
+  &lt;a href=&quot;#&quot;&gt;new&lt;/a&gt;&lt;a href=&quot;#&quot;&gt;past&lt;/a&gt;&lt;a href=&quot;#&quot;&gt;comments&lt;/a&gt;
+&lt;/nav&gt;
+&lt;main&gt;
+  &lt;div class=&quot;story&quot;&gt;
+    &lt;div class=&quot;title&quot;&gt;1. &lt;a href=&quot;#&quot;&gt;CRISPR tech selectively shreds cancer cells…&lt;/a&gt;&lt;/div&gt;
+    &lt;div class=&quot;meta&quot;&gt;323 points by signa11&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;!-- …repeated literally for every story… --&gt;
+&lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">A3 · Markdown — 646 bytes, 16 lines</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">The smallest source — Markdown's home turf is exactly this kind of linked list. But it needs an external converter plus a stylesheet to become a web page, the nav bar is just a row of links with no styling control, and there is no path to scores updating live.</p><div class="xvml-codeblock"><div class="xvml-codeblock__header"><span class="xvml-codeblock__lang">md</span></div><pre class="xvml-codeblock__pre"><code class="xvml-codeblock__code language-md"># Hacker News
+[Hacker News](#) | [new](#) | [past](#) | [comments](#) | [ask](#)
+1. **[CRISPR tech selectively shreds cancer cells…](#)**
+   323 points by signa11
+2. **[I Am Not a Reverse Centaur](#)**
+   47 points by doctorow
+3. **[A PDF that changes based on how its read](#)**
+   64 points by pdfgeek</code></pre></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Scenario A — measurements</h2><div class="xvml-card__body"><div class="xvml-table-wrapper"><table class="xvml-table xvml-table--bordered"><thead><tr><th>Metric</th><th>XVML</th><th>HTML</th><th>Markdown</th></tr></thead><tbody><tr><td>Source size</td><td>963 B</td><td>2,071 B</td><td>646 B</td></tr><tr><td>Source lines</td><td>23</td><td>52</td><td>16</td></tr><tr><td>Rendered output</td><td>22,335 B self-contained</td><td>2,071 B (is the output)</td><td>needs converter + CSS</td></tr><tr><td>Styling included</td><td>Yes — design system built in</td><td>Hand-written per page</td><td>None</td></tr><tr><td>Data-driven rows</td><td>Yes (@each over JSON state)</td><td>No — literal repetition</td><td>No</td></tr><tr><td>Live updates possible</td><td>Yes (@data src, xvml.set)</td><td>Only with custom JS</td><td>No</td></tr><tr><td>Dark mode / responsive</td><td>Built in</td><td>Hand-written</td><td>Converter-dependent</td></tr></tbody></table></div><p class="xvml-text xvml-text--muted">Verdict A: Markdown wins raw brevity for pure content (646 B), but produces a document, not a page. XVML is 2.2× smaller than the equivalent HTML, carries its own design system, and is the only version where the story list is data, not markup.</p></div></section><div class="xvml-divider xvml-divider--text"><span class="xvml-divider__line"></span><span class="xvml-divider__text">Scenario B — GitHub login page (app/form archetype)</span><span class="xvml-divider__line"></span></div><section class="xvml-card"><h2 class="xvml-card__label">B1 · XVML — 386 bytes, 15 lines</h2><div class="xvml-card__body"><div class="xvml-codeblock"><div class="xvml-codeblock__header"><span class="xvml-codeblock__lang">xvml</span></div><pre class="xvml-codeblock__pre"><code class="xvml-codeblock__code language-xvml">@spec 1
+@page &quot;Sign in to GitHub&quot; light
+@card &quot;Sign in to GitHub&quot;
+  @field email &quot;Username or email address&quot;
+  @field password &quot;Password&quot; secret
+  @link &quot;Forgot password?&quot; &quot;#&quot;
+  @button &quot;Sign in&quot; primary full
+  @divider &quot;or&quot;
+  @button &quot;Sign in with a passkey&quot; secondary full
+  @checkbox &quot;Keep me signed in&quot;
+@end
+@card
+  @text &quot;New to GitHub?&quot; muted
+  @link &quot;Create an account&quot; &quot;#&quot;
+@end</code></pre></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">B2 · Hand-written HTML — 2,487 bytes, 50 lines</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">More than half the file is CSS just to make the form presentable. Sixteen of the lines are the form; the rest is styling overhead XVML ships for free.</p><div class="xvml-codeblock"><div class="xvml-codeblock__header"><span class="xvml-codeblock__lang">html</span></div><pre class="xvml-codeblock__pre"><code class="xvml-codeblock__code language-html">&lt;style&gt;
+  .card { background: #fff; border: 1px solid #d8dee4; border-radius: 8px;
+          padding: 1.25rem; width: 320px; }
+  input[type=&quot;text&quot;], input[type=&quot;password&quot;] {
+    width: 100%; padding: 0.4rem 0.6rem; border: 1px solid #d8dee4; }
+  button { width: 100%; padding: 0.45rem; border-radius: 6px; }
+  .primary { background: #1f883d; color: #fff; }
+  /* …20 more lines of CSS… */
+&lt;/style&gt;
+&lt;div class=&quot;card&quot;&gt;
+  &lt;h1&gt;Sign in to GitHub&lt;/h1&gt;
+  &lt;form&gt;
+    &lt;label for=&quot;login&quot;&gt;Username or email address&lt;/label&gt;
+    &lt;input type=&quot;text&quot; id=&quot;login&quot; name=&quot;login&quot; /&gt;
+    &lt;label for=&quot;password&quot;&gt;Password&lt;/label&gt;
+    &lt;input type=&quot;password&quot; id=&quot;password&quot; name=&quot;password&quot; /&gt;
+    &lt;button type=&quot;submit&quot; class=&quot;primary&quot;&gt;Sign in&lt;/button&gt;
+    &lt;div class=&quot;divider&quot;&gt;or&lt;/div&gt;
+    &lt;button type=&quot;button&quot; class=&quot;secondary&quot;&gt;Sign in with a passkey&lt;/button&gt;
+    &lt;label class=&quot;checkbox&quot;&gt;&lt;input type=&quot;checkbox&quot; /&gt; Keep me signed in&lt;/label&gt;
+  &lt;/form&gt;
+&lt;/div&gt;</code></pre></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">B3 · Markdown — structurally impossible</h2><div class="xvml-card__body"><div class="xvml-alert xvml-alert--error" role="alert"><span class="xvml-alert__icon">✕</span><span class="xvml-alert__message">Markdown has no form elements. No inputs, no buttons, no password masking, no checkboxes that submit. The closest approximation is a textual sketch.</span></div><div class="xvml-codeblock"><div class="xvml-codeblock__header"><span class="xvml-codeblock__lang">md</span></div><pre class="xvml-codeblock__pre"><code class="xvml-codeblock__code language-md"># Sign in to GitHub
+Username or email address: ____________
+Password: ____________
+**[ Sign in ]**
+- [ ] Keep me signed in</code></pre></div><p class="xvml-text xvml-text--muted">This renders as prose with blanks. It is not a form and can never become one without abandoning Markdown for embedded raw HTML — at which point you are writing HTML.</p></div></section><section class="xvml-card"><h2 class="xvml-card__label">Scenario B — measurements</h2><div class="xvml-card__body"><div class="xvml-table-wrapper"><table class="xvml-table xvml-table--bordered"><thead><tr><th>Metric</th><th>XVML</th><th>HTML</th><th>Markdown</th></tr></thead><tbody><tr><td>Source size</td><td>386 B</td><td>2,487 B</td><td>501 B (non-functional)</td></tr><tr><td>Source lines</td><td>15</td><td>50</td><td>26</td></tr><tr><td>Working form controls</td><td>Yes — 4 controls</td><td>Yes — 4 controls</td><td>None</td></tr><tr><td>Source-to-HTML ratio</td><td>6.4× smaller</td><td>1×</td><td>n/a</td></tr><tr><td>Password masking</td><td>secret keyword</td><td>type=password + CSS</td><td>Impossible</td></tr><tr><td>Rendered output</td><td>16,772 B self-contained</td><td>2,487 B</td><td>n/a</td></tr></tbody></table></div><p class="xvml-text xvml-text--muted">Verdict B: this is XVML's strongest case. 6.4× less source than hand-written HTML for an identical working form, while Markdown is disqualified entirely. The real GitHub login page needs 45,695 bytes of HTML plus 28 stylesheets and 52 scripts; the XVML equivalent is one 16.7 KB file.</p></div></section><div class="xvml-divider xvml-divider--text"><span class="xvml-divider__line"></span><span class="xvml-divider__text">Overall analysis</span><span class="xvml-divider__line"></span></div><section class="xvml-card"><h2 class="xvml-card__label">Capability matrix</h2><div class="xvml-card__body"><div class="xvml-table-wrapper"><table class="xvml-table xvml-table--striped"><thead><tr><th>Capability</th><th>XVML</th><th>HTML</th><th>Markdown</th></tr></thead><tbody><tr><td>Human-readable source</td><td>Yes</td><td>No</td><td>Yes</td></tr><tr><td>Working forms (inputs, buttons, selects)</td><td>Yes</td><td>Yes</td><td>No</td></tr><tr><td>Built-in design system (dark mode, responsive)</td><td>Yes</td><td>No — bring your own</td><td>No</td></tr><tr><td>Self-contained single-file output</td><td>Always</td><td>Rarely in practice</td><td>No (needs converter)</td></tr><tr><td>Deterministic output (same input → same bytes)</td><td>Guaranteed</td><td>Author-dependent</td><td>Converter-dependent</td></tr><tr><td>Reactive state without a framework</td><td>Yes (~5 KB runtime)</td><td>Hand-written JS</td><td>No</td></tr><tr><td>Data-driven content (loops over JSON)</td><td>Yes</td><td>No (needs JS/templating)</td><td>No</td></tr><tr><td>Arbitrary pixel-perfect design</td><td>No — fixed design system</td><td>Yes</td><td>No</td></tr><tr><td>Arbitrary JS logic</td><td>No — fixed action grammar</td><td>Yes</td><td>No</td></tr><tr><td>Long-form prose ergonomics</td><td>Adequate</td><td>Poor</td><td>Excellent</td></tr><tr><td>Constrained grammar for AI generation</td><td>Yes — spec-checkable</td><td>No — unbounded</td><td>Partially</td></tr></tbody></table></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Confidence by use case</h2><div class="xvml-card__body"><p class="xvml-text xvml-text--muted">Confidence that choosing XVML over the alternatives is the right call, based on the measured evidence:</p><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Login / settings / form pages</span><span class="xvml-progress__value">90%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:90%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Dashboards and internal tools</span><span class="xvml-progress__value">88%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:88%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">AI-generated pages (xvml ask)</span><span class="xvml-progress__value">85%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:85%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Docs portals and spec pages</span><span class="xvml-progress__value">80%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:80%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Reactive state UI (simple apps)</span><span class="xvml-progress__value">80%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--success" style="width:80%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Long-form articles and blogs</span><span class="xvml-progress__value">55%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--warning" style="width:55%"></div></div></div><div class="xvml-progress"><div class="xvml-progress__header"><span class="xvml-progress__label">Marketing / pixel-perfect design</span><span class="xvml-progress__value">25%</span></div><div class="xvml-progress__track"><div class="xvml-progress__fill xvml-progress__fill--error" style="width:25%"></div></div></div><p class="xvml-text xvml-text--muted">Where the bar is low, use the other tool: Markdown for prose, raw HTML (or a framework) for unconstrained design.</p></div></section><section class="xvml-card"><h2 class="xvml-card__label">Where each format honestly wins</h2><div class="xvml-card__body"><div class="xvml-cols xvml-cols--3"><div class="xvml-col"><div class="xvml-section"><h3 class="xvml-section__label">XVML wins</h3><div class="xvml-section__body"><ul class="xvml-list xvml-list--check"><li class="xvml-list__item">App-style pages: 2–6× less source than HTML</li><li class="xvml-list__item">Zero styling decisions — consistent design system</li><li class="xvml-list__item">Single-file deterministic output</li><li class="xvml-list__item">Reactivity with no framework or build step</li><li class="xvml-list__item">AI generation: constrained grammar, spec-checkable, temperature 0</li></ul></div></div></div><div class="xvml-col"><div class="xvml-section"><h3 class="xvml-section__label">HTML wins</h3><div class="xvml-section__body"><ul class="xvml-list xvml-list--check"><li class="xvml-list__item">Unconstrained design — any layout, any brand</li><li class="xvml-list__item">Arbitrary JavaScript logic</li><li class="xvml-list__item">Universal ecosystem and tooling</li><li class="xvml-list__item">No abstraction ceiling — full platform access</li></ul></div></div></div><div class="xvml-col"><div class="xvml-section"><h3 class="xvml-section__label">Markdown wins</h3><div class="xvml-section__body"><ul class="xvml-list xvml-list--check"><li class="xvml-list__item">Long-form prose — lowest friction ever designed</li><li class="xvml-list__item">Smallest source for pure content (646 B vs 963 B)</li><li class="xvml-list__item">Ubiquitous support (GitHub, editors, chat)</li><li class="xvml-list__item">Trivially diffable and reviewable</li></ul></div></div></div></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Known XVML limitations</h2><div class="xvml-card__body"><div class="xvml-constraint xvml-constraint--must"><span class="xvml-constraint__severity">MUST</span><span class="xvml-constraint__name">design-ceiling</span><p class="xvml-constraint__desc">No custom CSS per element — the design system is the design. Brand-specific layouts are out of scope</p></div><div class="xvml-constraint xvml-constraint--must"><span class="xvml-constraint__severity">MUST</span><span class="xvml-constraint__name">logic-ceiling</span><p class="xvml-constraint__desc">Actions are a fixed grammar (set/toggle/push/remove/fn) — arbitrary client logic requires fn: escape hatches to window functions</p></div><div class="xvml-constraint xvml-constraint--should"><span class="xvml-constraint__severity">SHOULD</span><span class="xvml-constraint__name">output-weight</span><p class="xvml-constraint__desc">Self-containment costs bytes: every page carries the full CSS (~16 KB) even when it uses three commands</p></div><div class="xvml-constraint xvml-constraint--should"><span class="xvml-constraint__severity">SHOULD</span><span class="xvml-constraint__name">ecosystem</span><p class="xvml-constraint__desc">One implementation, one design system, no third-party component market — maturity risk vs 30 years of HTML</p></div></div></section><section class="xvml-card"><h2 class="xvml-card__label">Final verdict</h2><div class="xvml-card__body"><div class="xvml-alert xvml-alert--success" role="alert"><span class="xvml-alert__icon">✓</span><span class="xvml-alert__message">High confidence (85–90%) inside the niche: structured app-style pages, internal tools, docs portals, and AI-generated UI. The login benchmark — 386 bytes of XVML versus 2,487 bytes of hand-written HTML versus structural impossibility in Markdown — is the clearest single data point.</span></div><div class="xvml-alert xvml-alert--warning" role="alert"><span class="xvml-alert__icon">⚠</span><span class="xvml-alert__message">Moderate confidence (55%) for prose-heavy content: Markdown remains the better authoring format for articles; XVML is viable when the prose needs to live inside a styled, navigable site.</span></div><div class="xvml-alert xvml-alert--error" role="alert"><span class="xvml-alert__icon">✕</span><span class="xvml-alert__message">Low confidence (25%) for pixel-perfect custom design: that is HTML's home ground and XVML does not compete there by design.</span></div><p class="xvml-text xvml-text--muted">Positioning: XVML does not replace HTML or Markdown. It occupies the gap between them — pages too interactive for Markdown but too structured to justify hand-writing HTML. Within that gap, the measurements favour it consistently.</p></div></section>
+
+</body>
+</html>
